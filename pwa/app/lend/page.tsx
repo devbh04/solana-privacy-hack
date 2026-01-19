@@ -83,7 +83,13 @@ export default function Lend() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white text-black"
+    >
       {/* Header */}
       <div className="flex items-center py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
@@ -94,7 +100,7 @@ export default function Lend() {
 
       <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6 pb-36">
         {/* Current Lent */}
-        <div className="flex flex-col gap-1 pt-2 mb-6">
+        <div className="flex flex-col gap-1 pt-2 pb-2 mb-4 border-b border-gray-200">
           <p className="text-neon-green font-mono tracking-widest uppercase mb-1 text-xs">
             Total Lent
           </p>
@@ -110,14 +116,14 @@ export default function Lend() {
 
         {/* Pool Stats Overview */}
         <div className="grid grid-cols-2 gap-3 mb-2 text-center">
-          <div className="p-4">
+          <div className="p-4 shadow-sm border rounded-2xl">
             <div className="flex items-center gap-1 mb-1 justify-center">
               <Lock className="w-4 h-4 text-neon-green" />
               <p className="text-xs font-medium text-gray-600">Total Locked</p>
             </div>
             <p className="text-xl font-bold text-black">${(totalValueLocked / 1000000).toFixed(2)}M</p>
           </div>
-          <div className="p-4">
+          <div className="p-4 shadow-sm border rounded-2xl">
             <div className="flex items-center gap-1 mb-1 justify-center">
               <TrendingUp className="w-4 h-4 text-blue-500" />
               <p className="text-xs font-medium text-gray-600">Pool Utilized</p>
@@ -127,10 +133,10 @@ export default function Lend() {
         </div>
 
         {/* Lend Amount Input */}
-        <div className="flex flex-col items-center gap-6 py-4 mb-6">
+        <div className="flex flex-col items-center gap-6 py-4 mb-6 border rounded-2xl shadow-sm p-4">
           <div className="text-center w-full">
             <p className="text-sm font-medium text-gray-500 mb-2">I want to lend</p>
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center bg-gray-100 w-min mx-auto p-4 gap-3 rounded-lg">
               <input
                 type="number"
                 value={lendAmount}
@@ -140,7 +146,7 @@ export default function Lend() {
               <span className="text-2xl font-bold text-gray-400">USDC</span>
             </div>
             <p className="text-xs text-gray-400 mt-2">≈ ${lendAmount.toLocaleString()} USD</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="flex items-center justify-center gap-2 mt-2 border-b pb-4">
               <p className="text-xs text-gray-500">Available: {availableBalance.toFixed(2)} USDC</p>
               <button
                 onClick={handleMaxClick}
@@ -153,7 +159,7 @@ export default function Lend() {
 
           {/* Lock Period Slider */}
           <div className="w-full px-2">
-            <p className="text-sm font-medium text-gray-500 mb-4 text-center">Lock Period</p>
+            <p className="text-sm font-medium text-gray-500 text-center">Lock Period</p>
             <div className="relative w-full h-10 flex items-center">
               <input
                 type="range"
@@ -202,7 +208,7 @@ export default function Lend() {
           </div>
 
           {/* Current APY */}
-          <div className="bg-white p-4">
+          <div className="bg-white p-4 border rounded-2xl">
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-gray-500">APY</p>
               <button
@@ -217,7 +223,7 @@ export default function Lend() {
           </div>
 
           {/* Risk Level */}
-          <div className="bg-white p-4">
+          <div className="bg-white p-4 border rounded-2xl">
             <p className="text-sm font-medium text-gray-500 mb-1">Risk Level</p>
             <p className="text-xl font-bold text-black">Low</p>
             <div className="flex items-center gap-1 mt-1">
@@ -228,7 +234,7 @@ export default function Lend() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 fixed z-10 bottom-24 left-0 right-0 max-w-lg mx-auto px-6">
+        <div className="flex gap-3 fixed z-10 bottom-20 left-0 right-0 max-w-lg mx-auto px-6">
           <button
             onClick={handleConfirmLend}
             className="flex-1 bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold text-lg py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
@@ -245,7 +251,7 @@ export default function Lend() {
           </button>
         </div>
         {/* Lending Activity Section */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-1 h-6 bg-neon-green rounded-full"></div>
             Active Positions
@@ -256,7 +262,7 @@ export default function Lend() {
               setShowLendingInfo(true);
             }}
           />
-        </div>
+        </div> */}
       </main>
 
       {/* APY Info Dialog */}
@@ -639,7 +645,7 @@ export default function Lend() {
           );
         })()}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 

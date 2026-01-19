@@ -19,7 +19,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed -bottom-0.5 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="max-w-md mx-auto px-4 h-20 flex items-center">
+      <div className="max-w-md mx-auto px-4 h-16 flex items-center">
         {navItems.map((item, index) => {
           if (item.isCenter) {
             return (

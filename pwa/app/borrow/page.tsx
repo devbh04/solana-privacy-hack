@@ -81,7 +81,13 @@ export default function Borrow() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white text-black"
+    >
       {/* Header */}
       <div className="flex items-center py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
@@ -93,7 +99,7 @@ export default function Borrow() {
       <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6 pb-36">
 
         {/*Current borrowed*/}
-        <div className="flex flex-col gap-1 pt-2">
+        <div className="flex flex-col gap-1 pt-2 border-b border-gray-200 pb-4">
           <p className="text-green-500 font-mono tracking-widest uppercase mb-1 text-xs">
             Total Borrowed
           </p>
@@ -105,10 +111,10 @@ export default function Borrow() {
         </div>
 
         {/* Borrow Amount Input */}
-        <div className="flex flex-col items-center gap-6 py-4 mb-6 pt-10">
+        <div className="flex flex-col items-center gap-6 py-4 mb-6 border rounded-2xl shadow-sm p-4 mt-6">
           <div className="text-center">
             <p className="text-sm font-medium text-gray-500 mb-2">I want to borrow</p>
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center bg-gray-100 w-min mx-auto p-4 gap-3 rounded-lg">
               <input
                 type="number"
                 value={borrowAmount}
@@ -134,7 +140,7 @@ export default function Borrow() {
 
           {/* Time Period Slider */}
           <div className="w-full px-2">
-            <p className="text-sm font-medium text-gray-500 mb-4 text-center">Loan Duration</p>
+            <p className="text-sm font-medium text-gray-500 mb-2 text-center border-t pt-4">Loan Duration</p>
             <div className="relative w-full h-10 flex items-center">
               <input
                 type="range"
@@ -189,7 +195,7 @@ export default function Borrow() {
           </div>
 
           {/* Annual Interest */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-gray-200">
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-gray-500">Annual Interest</p>
               <button
@@ -204,7 +210,7 @@ export default function Borrow() {
           </div>
 
           {/* LTV */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-gray-200">
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
             <p className="text-sm font-medium text-gray-500 mb-1">Loan-to-Value</p>
             <p className="text-xl font-bold text-black">{ltv}%</p>
             <p className="text-xs text-gray-400 font-medium">Max 80%</p>
@@ -214,7 +220,7 @@ export default function Borrow() {
         <div className='h-10'></div>
 
         {/* Confirm Button */}
-        <div className='flex gap-3 fixed z-10 bottom-24 left-0 right-0 max-w-lg mx-auto px-6'>
+        <div className='flex gap-3 fixed z-10 bottom-20 left-0 right-0 max-w-lg mx-auto px-6'>
           <button
             onClick={handleConfirmBorrow}
             className="w-full bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold text-lg py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
@@ -225,7 +231,7 @@ export default function Borrow() {
         </div>
 
         {/* Borrowing Activity Section */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-1 h-6 bg-solana-purple rounded-full"></div>
             Active Borrowings
@@ -236,7 +242,7 @@ export default function Borrow() {
               setShowBorrowingInfo(true);
             }}
           />
-        </div>
+        </div> */}
       </main>
 
       {/* Interest Info Dialog */}
@@ -521,7 +527,7 @@ export default function Borrow() {
           );
         })()}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 

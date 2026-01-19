@@ -2,11 +2,71 @@
 
 import { useAppStore } from '@/lib/store';
 import { PhantomCard } from '@/components/PhantomCard';
-import { Ban, CreditCardIcon, Eye, EyeOff, Key, Tag } from 'lucide-react';
+import { Ban, CreditCardIcon, Eye, EyeOff, Key, Tag, DollarSign, Upload, Download, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 
 export default function CardHome() {
-  const { isCardFrozen, toggleCardFreeze, rotateCardId, balance, transactions, showCardDetails, toggleCardDetails } = useAppStore();
+  const { isCardFrozen, toggleCardFreeze, rotateCardId, balance, transactions, showCardDetails, toggleCardDetails, allActivities } = useAppStore();
+
+  // Merge transactions and allActivities
+  const combinedActivities = useMemo(() => {
+    return [...transactions, ...allActivities].sort((a, b) => {
+      // Sort by timestamp (most recent first)
+      const timeA = a.timestamp;
+      const timeB = b.timestamp;
+      if (timeA.includes('Just now')) return -1;
+      if (timeB.includes('Just now')) return 1;
+      if (timeA.includes('hour')) return -1;
+      if (timeB.includes('hour')) return 1;
+      return 0;
+    });
+  }, [transactions, allActivities]);
+
+  const getActivityIcon = (activity: any) => {
+    // Handle transaction icons
+    if (activity.icon) {
+      const iconMap: { [key: string]: any } = {
+        'local_cafe': <Tag className="w-5 h-5 text-blue-500" />,
+        'vpn_key': <Key className="w-5 h-5 text-neutral-600" />,
+        'block': <Ban className="w-5 h-5 text-red-400" />,
+        'upload': <Upload className="w-5 h-5 text-solana-purple" />,
+        'download': <Download className="w-5 h-5 text-red-400" />,
+        'payments': <DollarSign className="w-5 h-5 text-neon-green" />,
+        'swap_horiz': <ArrowLeftRight className="w-5 h-5 text-neutral-600" />,
+      };
+      return iconMap[activity.icon] || <CreditCardIcon className="w-5 h-5" />;
+    }
+    
+    // Handle activity type icons
+    const typeMap: { [key: string]: string } = {
+      'payment': '💳',
+      'lend': '📤',
+      'borrow': '📥',
+      'repay': '💰',
+      'swap': '🔄',
+      'transfer': '➡️',
+    };
+    return <span className="text-lg">{typeMap[activity.type] || '📊'}</span>;
+  };
+
+  const getActivityColor = (activity: any) => {
+    if (activity.type) {
+      switch (activity.type) {
+        case 'lend':
+        case 'repay':
+          return 'text-neon-green';
+        case 'borrow':
+          return 'text-solana-purple';
+        case 'swap':
+          return 'text-blue-400';
+        default:
+          return 'text-black';
+      }
+    }
+    return 'text-black';
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -41,7 +101,13 @@ export default function CardHome() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black pb-24">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white text-black pb-24"
+    >
       {/* Background Grid Pattern */}
       <div
         className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]"
@@ -131,11 +197,11 @@ export default function CardHome() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Combined Activity */}
         <div className="px-6 flex-1 pb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-gray-600 text-xs font-bold font-mono uppercase tracking-widest">
-              Recent Activity
+              All Activity
             </h3>
             <span className="text-neon-green/40 text-[10px] cursor-pointer hover:text-neon-green transition-colors">
               VIEW ALL
@@ -143,43 +209,43 @@ export default function CardHome() {
           </div>
 
           <div className="flex flex-col">
-            {transactions.map((tx, index) => (
+            {combinedActivities.slice(0, 10).map((activity, index) => (
               <div
-                key={tx.id}
-                className={`flex items-center justify-between py-4 ${index !== transactions.length - 1 ? 'border-b border-white/5' : ''
-                  } hover:bg-gray-50 transition-colors -mx-2 px-2 rounded-lg border-l-2 ${getStatusColor(tx.status)}`}
+                key={activity.id}
+                className={`flex items-center justify-between py-4 ${
+                  index !== combinedActivities.slice(0, 10).length - 1 ? 'border-b border-white/5' : ''
+                } hover:bg-gray-50 transition-colors -mx-2 px-2 rounded-lg border-l-2 ${getStatusColor(activity.status)}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center ${tx.status === 'blocked' ? 'text-red-400' :
-                      tx.status === 'secure' ? 'text-neon-green' :
-                        'text-gray-600'
-                    }`}>
-                    <span className="text-lg">{
-                      tx.icon === 'local_cafe' ? <Tag className="w-5 h-5 text-blue-500" /> :
-                        tx.icon === 'vpn_key' ? <Key className="w-5 h-5 text-neutral-600" /> :
-                          tx.icon === 'block' ? <Ban className="w-5 h-5 text-red-400" /> : <CreditCardIcon className="w-5 h-5" />
-                    }</span>
+                  <div className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center ${
+                    activity.status === 'blocked' ? 'text-red-400' :
+                    activity.status === 'secure' ? 'text-neon-green' :
+                    'text-gray-600'
+                  }`}>
+                    {getActivityIcon(activity)}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-black text-sm font-medium">{tx.merchant}</span>
+                    <span className="text-black text-sm font-medium">{activity.merchant}</span>
                     <span className="text-gray-500 text-[10px] font-mono">
-                      {tx.message || (tx.txHash ? `TX: ${tx.txHash}` : '')}
+                      {activity.message || (activity.txHash ? `TX: ${activity.txHash}` : '')}
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  {tx.amount ? (
-                    <span className="text-black text-xs font-mono font-bold">{tx.amount}</span>
+                  {activity.amount ? (
+                    <span className={`text-xs font-mono font-bold ${getActivityColor(activity)}`}>
+                      {activity.amount}
+                    </span>
                   ) : (
-                    getStatusBadge(tx.status)
+                    getStatusBadge(activity.status)
                   )}
-                  <span className="text-gray-500 text-[10px]">{tx.timestamp}</span>
+                  <span className="text-gray-500 text-[10px]">{activity.timestamp}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

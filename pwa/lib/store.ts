@@ -215,15 +215,6 @@ export const useAppStore = create<AppState>((set) => ({
       timestamp: '5 days ago',
       icon: 'swap_horiz',
     },
-    {
-      id: 'a6',
-      type: 'payment',
-      merchant: 'Gas Station',
-      amount: '-45.00 USDC',
-      status: 'completed',
-      timestamp: '1 week ago',
-      icon: 'local_gas_station',
-    },
   ],
   lendingActivities: [
     {

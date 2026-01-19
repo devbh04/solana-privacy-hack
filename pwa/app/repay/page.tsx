@@ -41,7 +41,13 @@ export default function Repay() {
   const selectedRepaymentData = repayingActivities.find(r => r.id === selectedRepayment);
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white text-black"
+    >
       {/* Header */}
       <div className="flex items-center py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
@@ -119,7 +125,7 @@ export default function Repay() {
         </div>
 
         {/* Repayment History */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-1 h-6 bg-neon-green rounded-full"></div>
             Repayment History
@@ -168,7 +174,7 @@ export default function Repay() {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </main>
 
       {/* Repayment Info Dialog */}
@@ -322,8 +328,8 @@ export default function Repay() {
                 <div className="space-y-4">
                   {/* Repayment Amount Input */}
                   <div className="bg-linear-to-br from-neon-green/10 to-transparent border-2 border-neon-green/30 p-6 rounded-xl">
-                    <p className="text-sm text-gray-600 mb-3 text-center">Repayment Amount</p>
-                    <div className="flex items-center justify-center gap-2 mb-3">
+                    <p className="text-sm text-gray-600 mb-3 text-center">Enter Repayment Amount</p>
+                    <div className="flex items-center bg-gray-100 w-min mx-auto p-2 justify-center gap-2 mb-3">
                       <span className="text-2xl font-bold text-gray-400">$</span>
                       <input
                         type="number"
@@ -340,7 +346,7 @@ export default function Repay() {
                         min="0"
                         max={selectedLoanData.totalDue}
                         step="0.01"
-                        className="text-4xl font-bold text-black bg-transparent border-none outline-none w-32 text-center"
+                        className="text-4xl font-bold text-black outline-none w-32 text-center"
                       />
                       <span className="text-xl text-gray-500">USDC</span>
                     </div>
@@ -450,6 +456,6 @@ export default function Repay() {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

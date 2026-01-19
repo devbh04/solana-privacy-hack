@@ -117,11 +117,11 @@ export default function Home() {
             <button 
               onClick={handleConnectWallet}
               disabled={isConnecting}
-              className="w-full h-14 bg-neon-green text-black font-bold text-base tracking-wide uppercase hover:bg-white transition-colors duration-200 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 rounded-full bg-neon-green text-black font-bold text-base tracking-wide uppercase hover:bg-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
-            <button className="w-full h-14 bg-white border-2 border-solana-purple/50 text-black font-bold text-base tracking-wide uppercase hover:bg-solana-purple hover:text-white hover:border-solana-purple transition-all duration-200 rounded-sm flex items-center justify-center gap-2 group">
+            <button className="w-full h-14 rounded-full bg-white border-2 border-solana-purple/50 text-black font-bold text-base tracking-wide uppercase hover:bg-solana-purple hover:text-white hover:border-solana-purple transition-all duration-200 flex items-center justify-center gap-2 group">
               <span>Request NFC Card</span>
               <span className="text-[18px] text-solana-purple group-hover:text-white transition-colors">→</span>
             </button>

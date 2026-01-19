@@ -73,7 +73,13 @@ export default function Wallet() {
   };
   
   return (
-    <div className="min-h-screen bg-white text-black pb-28">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white text-black pb-28"
+    >
       {/* Header */}
       <div className="flex items-center py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
@@ -192,75 +198,6 @@ export default function Wallet() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Activity Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <div className="w-1 h-6 bg-solana-purple rounded-full"></div>
-              Recent Activity
-            </h2>
-          </div>
-          
-          <div className="space-y-2">
-            {allActivities.slice(0, 8).map((activity) => (
-              <div key={activity.id}>
-                <div className="bg-white rounded-xl p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-xl">
-                        {getActivityIcon(activity.type)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm">{activity.merchant}</p>
-                        <p className="text-xs text-gray-500">{activity.timestamp}</p>
-                        {activity.message && (
-                          <p className="text-xs text-gray-400 mt-0.5">{activity.message}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {activity.amount && (
-                        <p className={`font-bold text-sm ${
-                          activity.amount.startsWith('-') 
-                            ? 'text-red-500' 
-                            : activity.amount.startsWith('+')
-                            ? 'text-neon-green'
-                            : 'text-black'
-                        }`}>
-                          {activity.amount}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        {activity.status === 'completed' && (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                            ✓
-                          </span>
-                        )}
-                        {activity.status === 'pending' && (
-                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full flex items-center gap-0.5">
-                            <RefreshCw className="w-2 h-2" />
-                          </span>
-                        )}
-                        {activity.status === 'blocked' && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
-                            ✕
-                          </span>
-                        )}
-                        {activity.status === 'secure' && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                            🔒
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="border-b border-gray-200"></div>
-              </div>
-            ))}
           </div>
         </div>
       </main>
@@ -491,8 +428,8 @@ export default function Wallet() {
               </div>
             </motion.div>
           </>
-        )}
+)}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

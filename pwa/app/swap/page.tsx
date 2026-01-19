@@ -77,7 +77,7 @@ export default function Swap() {
   }, [swapState.isTokenDialogOpen]);
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col pb-20">
       {/* Header */}
       <div className="flex items-center justify-between py-8 px-6 pb-2">
         <div className="">
@@ -198,7 +198,7 @@ export default function Swap() {
         </motion.div>
 
         {/* Spacer */}
-        <div className="h-64"></div>
+        <div className="flex-1"></div>
 
         {/* Info & Privacy Section */}
         <div className="mt-6 pb-4 flex flex-col gap-3">
