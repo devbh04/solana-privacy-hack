@@ -75,7 +75,7 @@ export default function Home() {
               <span className="text-neon-green">$</span>
               <span>whoami</span>
             </div>
-            <div className="flex gap-2 text-gray-300">
+            <div className="flex gap-2 text-gray-500">
               <span>&gt;</span>
               <span>privacy-first on-chain credit</span>
               <span className="w-2 h-4 bg-neon-green animate-blink inline-block align-middle"></span>
@@ -98,15 +98,15 @@ export default function Home() {
           <div className="w-full max-w-70 space-y-3 text-left opacity-0 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center gap-3 text-sm group">
               <span className="text-neon-green font-bold">&gt;</span>
-              <span className="text-gray-300 group-hover:text-white transition-colors">On-chain Lending</span>
+              <span className="text-gray-500 group-hover:text-white transition-colors">On-chain Lending</span>
             </div>
             <div className="flex items-center gap-3 text-sm group">
               <span className="text-neon-green font-bold">&gt;</span>
-              <span className="text-gray-300 group-hover:text-white transition-colors">NFC Payments</span>
+              <span className="text-gray-500 group-hover:text-white transition-colors">NFC Payments</span>
             </div>
             <div className="flex items-center gap-3 text-sm group">
               <span className="text-neon-green font-bold">&gt;</span>
-              <span className="text-gray-300 group-hover:text-white transition-colors">Zero Tracking</span>
+              <span className="text-gray-500 group-hover:text-white transition-colors">Zero Tracking</span>
             </div>
           </div>
 
