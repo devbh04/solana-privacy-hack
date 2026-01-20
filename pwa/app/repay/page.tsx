@@ -1,15 +1,16 @@
 'use client';
 
-import { useAppStore } from '@/lib/store';
+import { useAppStore, BorrowingPosition } from '@/lib/store';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ShieldCheck, X, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function Repay() {
-  const borrowingActivities = useAppStore((state) => state.borrowingActivities);
-  const repayingActivities = useAppStore((state) => state.repayingActivities);
-  const balance = useAppStore((state) => state.balance);
-  
+  const borrowingPositions = useAppStore((state) => state.borrowingPositions);
+  const repayLoan = useAppStore((state) => state.repayLoan);
+  const getUsdcBalance = useAppStore((state) => state.getUsdcBalance);
+  const allActivities = useAppStore((state) => state.allActivities);
+
   const [selectedLoan, setSelectedLoan] = useState<string | null>(null);
   const [repayAmount, setRepayAmount] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -17,8 +18,8 @@ export default function Repay() {
   const [showRepaymentInfo, setShowRepaymentInfo] = useState(false);
   const [selectedRepayment, setSelectedRepayment] = useState<string | null>(null);
 
-  const activeLoans = borrowingActivities.filter(loan => loan.status === 'active');
-  const totalOutstanding = activeLoans.reduce((sum, loan) => sum + loan.totalDue, 0);
+  const activeLoans = borrowingPositions.filter((loan: BorrowingPosition) => loan.status === 'active');
+  const totalOutstanding = activeLoans.reduce((sum: number, loan: BorrowingPosition) => sum + loan.totalDue, 0);
 
   const handleRepayClick = (loanId: string, maxAmount: number) => {
     setSelectedLoan(loanId);
@@ -33,15 +34,22 @@ export default function Repay() {
   };
 
   const handleConfirmRepay = () => {
-    setShowConfirmDialog(false);
-    alert(`Successfully repaid $${repayAmount} USDC!`);
+    if (selectedLoan) {
+      const success = repayLoan(selectedLoan, repayAmount);
+      setShowConfirmDialog(false);
+      if (success) {
+        setRepayAmount(0);
+        setSelectedLoan(null);
+      }
+    }
   };
 
-  const selectedLoanData = activeLoans.find(loan => loan.id === selectedLoan);
-  const selectedRepaymentData = repayingActivities.find(r => r.id === selectedRepayment);
+  const selectedLoanData = activeLoans.find((loan: BorrowingPosition) => loan.id === selectedLoan);
+  const repayActivities = allActivities.filter(a => a.type === 'repay');
+  const selectedRepaymentData = repayActivities.find(r => r.id === selectedRepayment);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -80,14 +88,14 @@ export default function Repay() {
           </h2>
           <div className="space-y-3">
             {activeLoans.map((loan) => (
-              <div 
+              <div
                 key={loan.id}
                 className="bg-white rounded-xl p-5 shadow-sm border-2 border-gray-200"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-2xl font-bold text-black">${loan.amount} USDC</p>
-                    <p className="text-xs text-gray-500 mt-1">+ ${loan.interestDue.toFixed(2)} interest</p>
+                    <p className="text-2xl font-bold text-black">${loan.principal} USDC</p>
+                    <p className="text-xs text-gray-500 mt-1">+ ${loan.accruedInterest.toFixed(2)} interest</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Due Date</p>
@@ -106,7 +114,7 @@ export default function Repay() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => handleRepayClick(loan.id, loan.totalDue)}
                   className="w-full bg-neon-green hover:bg-green-400 text-black font-bold py-3 rounded-xl transition-all transform active:scale-[0.98] shadow-sm"
                 >
@@ -210,7 +218,7 @@ export default function Repay() {
                   <div className="bg-linear-to-br from-neon-green/10 to-transparent border-2 border-neon-green/30 p-6 rounded-xl text-center">
                     <p className="text-sm text-gray-600 mb-2">Payment Amount</p>
                     <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-4xl font-bold text-neon-green">${selectedRepaymentData.amount > 0 ? selectedRepaymentData.amount.toFixed(2) : '0.00'}</span>
+                      <span className="text-4xl font-bold text-neon-green">{selectedRepaymentData.amount || '0.00'}</span>
                       <span className="text-xl text-gray-500">USDC</span>
                     </div>
                     <div className="mt-3 pt-3 border-t border-neon-green/20">
@@ -224,28 +232,22 @@ export default function Repay() {
                   {/* Payment Details */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                      <span className="text-sm text-gray-600">Loan ID</span>
-                      <span className="font-bold text-black">#{selectedRepaymentData.loanId}</span>
+                      <span className="text-sm text-gray-600">Transaction ID</span>
+                      <span className="font-bold text-black">#{selectedRepaymentData.id}</span>
                     </div>
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Payment Date</span>
-                      <span className="font-bold text-black">{selectedRepaymentData.repaidDate}</span>
+                      <span className="font-bold text-black">{selectedRepaymentData.timestamp}</span>
                     </div>
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                      <span className="text-sm text-gray-600">Payment Type</span>
-                      <span className="font-bold text-black">
-                        {selectedRepaymentData.remainingBalance === 0 ? 'Full Payment' : 'Partial Payment'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                      <span className="text-sm text-gray-600">Remaining Balance</span>
-                      <span className="font-bold text-black">${selectedRepaymentData.remainingBalance.toFixed(2)} USDC</span>
+                      <span className="text-sm text-gray-600">Description</span>
+                      <span className="font-bold text-black">{selectedRepaymentData.description || 'Loan Repayment'}</span>
                     </div>
                     <div className="flex justify-between items-center pb-3 border-b-2 border-gray-300">
                       <span className="text-sm font-semibold text-gray-800">Status</span>
                       <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
-                        Completed
+                        {selectedRepaymentData.status}
                       </span>
                     </div>
                   </div>
@@ -257,10 +259,7 @@ export default function Repay() {
                       Credit Score Impact
                     </p>
                     <p className="text-xs text-green-800">
-                      {selectedRepaymentData.remainingBalance === 0 
-                        ? 'This full repayment positively impacted your credit score. Keep up the good work!'
-                        : 'This partial payment was recorded and will help maintain your credit standing.'
-                      }
+                      This repayment was recorded and positively impacts your credit score. Keep up the good work!
                     </p>
                   </div>
 
@@ -374,11 +373,11 @@ export default function Repay() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Original Amount</span>
-                      <span className="font-bold text-black">${selectedLoanData.amount} USDC</span>
+                      <span className="font-bold text-black">${selectedLoanData.principal} USDC</span>
                     </div>
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Interest Accrued</span>
-                      <span className="font-bold text-red-500">${selectedLoanData.interestDue.toFixed(2)} USDC</span>
+                      <span className="font-bold text-red-500">${selectedLoanData.accruedInterest.toFixed(2)} USDC</span>
                     </div>
                     <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Due Date</span>
@@ -396,11 +395,10 @@ export default function Repay() {
 
                   {/* Payment Type Info */}
                   {repayAmount > 0 && (
-                    <div className={`rounded-xl p-4 border ${
-                      repayAmount >= selectedLoanData.totalDue 
-                        ? 'bg-neon-green/10 border-neon-green/20' 
-                        : 'bg-blue-50 border-blue-200'
-                    }`}>
+                    <div className={`rounded-xl p-4 border ${repayAmount >= selectedLoanData.totalDue
+                      ? 'bg-neon-green/10 border-neon-green/20'
+                      : 'bg-blue-50 border-blue-200'
+                      }`}>
                       <p className="text-xs font-semibold mb-1 flex items-center gap-1">
                         {repayAmount >= selectedLoanData.totalDue ? (
                           <>
@@ -415,7 +413,7 @@ export default function Repay() {
                         )}
                       </p>
                       <p className="text-xs text-gray-700">
-                        {repayAmount >= selectedLoanData.totalDue 
+                        {repayAmount >= selectedLoanData.totalDue
                           ? 'This will fully settle your loan and positively impact your credit score.'
                           : `You will still owe $${(selectedLoanData.totalDue - repayAmount).toFixed(2)} USDC after this payment.`
                         }

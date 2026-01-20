@@ -27,7 +27,9 @@ export default function Swap() {
     swapTokens,
     openTokenDialog,
     closeTokenDialog,
-    selectToken
+    selectToken,
+    executeSwap,
+    wallet
   } = useAppStore();
 
   const [incognitoMode, setIncognitoMode] = useState(true);
@@ -55,9 +57,9 @@ export default function Swap() {
       setFilteredTokens(TOKENS);
       return;
     }
-    
+
     const lowercaseQuery = query.toLowerCase();
-    const filtered = TOKENS.filter(token => 
+    const filtered = TOKENS.filter(token =>
       token.symbol.toLowerCase().includes(lowercaseQuery) ||
       token.name.toLowerCase().includes(lowercaseQuery)
     );
@@ -91,8 +93,8 @@ export default function Swap() {
       {/* Main Content */}
       <main className="flex flex-col flex-1 px-6 py-6 max-w-md mx-auto w-full">
         {/* From Input Card */}
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             y: isSwapping ? 100 : 0,
             opacity: isSwapping ? 0.5 : 1
           }}
@@ -155,8 +157,8 @@ export default function Swap() {
         </div>
 
         {/* To Input Card */}
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             y: isSwapping ? -100 : 0,
             opacity: isSwapping ? 0.5 : 1
           }}
@@ -211,14 +213,18 @@ export default function Swap() {
               <Info className="w-4 h-4" />
             </div>
             <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-400"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3" /><path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14" /><path d="M3 20l12 0" /><path d="M18 7v1a1 1 0 0 0 1 1h1" /><path d="M4 11l10 0" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-400"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3" /><path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14" /><path d="M3 20l12 0" /><path d="M18 7v1a1 1 0 0 0 1 1h1" /><path d="M4 11l10 0" /></svg>
               <span className="text-sm font-medium text-gray-500">$0.002</span>
             </div>
           </div>
         </div>
 
         {/* Main Action Button */}
-        <button className="w-full bg-solana-purple hover:bg-[#8532e8] text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+        <button
+          onClick={executeSwap}
+          disabled={!swapState.fromAmount || parseFloat(swapState.fromAmount) <= 0}
+          className="w-full bg-solana-purple hover:bg-[#8532e8] text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <span>Swap</span>
           <ArrowDownUp className="w-5 h-5" />
         </button>

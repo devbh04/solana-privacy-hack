@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore } from '@/lib/store';
+import { useAppStore, LendingPosition } from '@/lib/store';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ShieldCheck, X, TrendingUp, Lock } from 'lucide-react';
@@ -20,8 +20,11 @@ const LOCK_PERIODS = [
 ];
 
 export default function Lend() {
-  const profileStats = useAppStore((state) => state.profileStats);
-  const swapState = useAppStore((state) => state.swapState);
+  const lendUsdc = useAppStore((state) => state.lendUsdc);
+  const withdrawLending = useAppStore((state) => state.withdrawLending);
+  const getActualUsdcBalance = useAppStore((state) => state.getActualUsdcBalance);
+  const totalLentToPool = useAppStore((state) => state.totalLentToPool);
+  const lendingPositions = useAppStore((state) => state.lendingPositions);
 
   const [lendAmount, setLendAmount] = useState(1000);
   const [selectedPeriodIndex, setSelectedPeriodIndex] = useState(3); // 90 days default
@@ -31,9 +34,11 @@ export default function Lend() {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showLendingInfo, setShowLendingInfo] = useState(false);
   const [selectedLending, setSelectedLending] = useState<string | null>(null);
+  const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const [selectedWithdrawPosition, setSelectedWithdrawPosition] = useState<string | null>(null);
 
-  // Get available balance (using USDC from swap state)
-  const availableBalance = swapState.toToken.balance; // USDC balance
+  // Get available balance from wallet
+  const availableBalance = getActualUsdcBalance();
 
   // Get selected period details
   const selectedPeriod = LOCK_PERIODS[selectedPeriodIndex];
@@ -77,13 +82,15 @@ export default function Lend() {
   };
 
   const handleFinalConfirm = () => {
-    // TODO: Implement actual lending logic with Zustand
+    const success = lendUsdc(lendAmount, selectedPeriod.days);
     setShowConfirmDialog(false);
-    alert(`Successfully lent ${lendAmount} USDC for ${selectedPeriod.label}!`);
+    if (success) {
+      setLendAmount(0);
+    }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -106,7 +113,7 @@ export default function Lend() {
           </p>
           <div className="flex items-baseline gap-3">
             <h1 className="text-3xl font-bold text-black tracking-tight font-mono">
-              {profileStats.balances.total || '0.00'} USDC
+              ${totalLentToPool.toLocaleString()} USDC
             </h1>
           </div>
           <p className="text-xs text-gray-500 mt-1">
@@ -421,111 +428,118 @@ export default function Lend() {
 
       {/* Withdraw Dialog */}
       <AnimatePresence>
-        {showWithdrawDialog && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowWithdrawDialog(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold">Withdraw Funds</h3>
-                <button
-                  onClick={() => setShowWithdrawDialog(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto">
-                <div className="space-y-4">
-                  {/* Current Position */}
-                  <div className="bg-linear-to-br from-solana-purple/10 to-transparent border-2 border-solana-purple/30 p-6 rounded-xl">
-                    <p className="text-sm text-gray-600 mb-2">Your Current Position</p>
-                    <div className="flex items-baseline justify-center gap-2 mb-3">
-                      <span className="text-4xl font-bold text-black">{profileStats.balances.total || '0.00'}</span>
-                      <span className="text-xl text-gray-500">USDC</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-600 pt-3 border-t border-gray-200">
-                      <span>Lock ends in: 45 days</span>
-                      <span className="text-neon-green font-semibold">Earning {currentApy}%</span>
-                    </div>
-                  </div>
-
-                  {/* Withdrawal Amount */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-700">Withdraw Amount</label>
-                    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          className="text-2xl font-bold text-black bg-transparent border-none outline-none w-full"
-                        />
-                        <span className="text-gray-400 font-semibold">USDC</span>
+        {showWithdrawDialog && selectedWithdrawPosition && (() => {
+          const position = lendingPositions.find(p => p.id === selectedWithdrawPosition);
+          if (!position) return null;
+          
+          const maxWithdraw = position.amount + position.earnedInterest;
+          const actualWithdrawAmount = withdrawAmount || maxWithdraw;
+          
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setShowWithdrawDialog(false);
+                  setSelectedWithdrawPosition(null);
+                  setWithdrawAmount(0);
+                }}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+              >
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <h3 className="text-xl font-bold">Withdraw Funds</h3>
+                  <button
+                    onClick={() => {
+                      setShowWithdrawDialog(false);
+                      setSelectedWithdrawPosition(null);
+                      setWithdrawAmount(0);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6 overflow-y-auto">
+                  <div className="space-y-4">
+                    {/* Current Position */}
+                    <div className="bg-linear-to-br from-solana-purple/10 to-transparent border-2 border-solana-purple/30 p-6 rounded-xl">
+                      <p className="text-sm text-gray-600 mb-2">Your Position</p>
+                      <div className="flex items-baseline justify-center gap-2 mb-3">
+                        <span className="text-4xl font-bold text-black">${position.amount.toLocaleString()}</span>
+                        <span className="text-xl text-gray-500">USDC</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">Available: {profileStats.balances.total || '0.00'} USDC</p>
-                        <button className="text-xs font-bold text-solana-purple bg-solana-purple/10 px-2 py-0.5 rounded uppercase hover:bg-solana-purple/20 transition-colors">
-                          Max
-                        </button>
+                      <div className="flex justify-between text-xs text-gray-600 pt-3 border-t border-gray-200">
+                        <span>Lock Period: {position.lockPeriodDays} days</span>
+                        <span className="text-neon-green font-semibold">APY: {position.apy}%</span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Withdrawal Details */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                      <span className="text-sm text-gray-600">Interest Earned So Far</span>
-                      <span className="font-bold text-neon-green">+$0.00 USDC</span>
+                    {/* Withdrawal Details */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                        <span className="text-sm text-gray-600">Principal</span>
+                        <span className="font-bold text-black">${position.amount.toLocaleString()} USDC</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                        <span className="text-sm text-gray-600">Interest Earned</span>
+                        <span className="font-bold text-neon-green">+${position.earnedInterest.toFixed(2)} USDC</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-3 border-b-2 border-gray-300">
+                        <span className="text-sm font-semibold text-gray-800">You Will Receive</span>
+                        <span className="font-bold text-black text-lg">${maxWithdraw.toLocaleString('en-US', { minimumFractionDigits: 2 })} USDC</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center pb-3 border-b-2 border-gray-300">
-                      <span className="text-sm font-semibold text-gray-800">You Will Receive</span>
-                      <span className="font-bold text-black text-lg">$0.00 USDC</span>
-                    </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => setShowWithdrawDialog(false)}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowWithdrawDialog(false);
-                        alert('Withdrawal initiated!');
-                      }}
-                      className="flex-1 bg-solana-purple hover:bg-[#8532e8] active:bg-[#7B35CC] text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-500/20 transition-all transform active:scale-[0.98]"
-                    >
-                      Confirm Withdraw
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => {
+                          setShowWithdrawDialog(false);
+                          setSelectedWithdrawPosition(null);
+                          setWithdrawAmount(0);
+                        }}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          const success = withdrawLending(selectedWithdrawPosition);
+                          if (success) {
+                            setShowWithdrawDialog(false);
+                            setSelectedWithdrawPosition(null);
+                            setWithdrawAmount(0);
+                          }
+                        }}
+                        className="flex-1 bg-solana-purple hover:bg-[#8532e8] active:bg-[#7B35CC] text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-500/20 transition-all transform active:scale-[0.98]"
+                      >
+                        Confirm Withdraw
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Lending Info Dialog */}
       <AnimatePresence>
         {showLendingInfo && selectedLending && (() => {
-          const lendingActivities = useAppStore.getState().lendingActivities;
-          const selectedLendingData = lendingActivities.find(l => l.id === selectedLending);
+          const positions = useAppStore.getState().lendingPositions;
+          const selectedLendingData = positions.find((l: LendingPosition) => l.id === selectedLending);
           if (!selectedLendingData) return null;
-          
+
           return (
             <>
               <motion.div
@@ -586,11 +600,11 @@ export default function Lend() {
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Lock Period</span>
-                        <span className="font-bold text-black">{selectedLendingData.lockPeriod} days</span>
+                        <span className="font-bold text-black">{selectedLendingData.lockPeriodDays} days</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Interest Earned</span>
-                        <span className="font-bold text-neon-green">${selectedLendingData.earned.toFixed(2)} USDC</span>
+                        <span className="font-bold text-neon-green">${selectedLendingData.earnedInterest.toFixed(2)} USDC</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b-2 border-gray-300">
                         <span className="text-sm font-semibold text-gray-800">Status</span>
@@ -608,7 +622,7 @@ export default function Lend() {
                         Returns Information
                       </p>
                       <p className="text-xs text-green-800">
-                        You've earned ${selectedLendingData.earned.toFixed(2)} USDC so far. Your position will unlock on {selectedLendingData.endDate}, and you'll receive your principal plus all accrued interest.
+                        You've earned ${selectedLendingData.earnedInterest.toFixed(2)} USDC so far. Your position will unlock on {selectedLendingData.endDate}, and you'll receive your principal plus all accrued interest.
                       </p>
                     </div>
 
@@ -631,13 +645,25 @@ export default function Lend() {
                       </div>
                     </div>
 
-                    {/* Close Button */}
-                    <button
-                      onClick={() => setShowLendingInfo(false)}
-                      className="w-full bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors mt-2"
-                    >
-                      Close
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => setShowLendingInfo(false)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowLendingInfo(false);
+                          setSelectedWithdrawPosition(selectedLending);
+                          setShowWithdrawDialog(true);
+                        }}
+                        className="flex-1 bg-solana-purple hover:bg-[#8532e8] text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-500/20 transition-all"
+                      >
+                        Withdraw
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -651,8 +677,8 @@ export default function Lend() {
 
 // Lending Activity Component
 function LendingActivity({ onShowInfo }: { onShowInfo: (id: string) => void }) {
-  const lendingActivities = useAppStore((state) => state.lendingActivities);
-  const activePositions = lendingActivities.filter(pos => pos.status === 'active');
+  const lendingPositions = useAppStore((state) => state.lendingPositions);
+  const activePositions = lendingPositions.filter((pos: LendingPosition) => pos.status === 'active');
 
   if (activePositions.length === 0) {
     return (
@@ -664,7 +690,7 @@ function LendingActivity({ onShowInfo }: { onShowInfo: (id: string) => void }) {
 
   return (
     <div className="space-y-3">
-      {activePositions.map((position) => (
+      {activePositions.map((position: LendingPosition) => (
         <div key={position.id}>
           <div
             className="bg-white rounded-xl p-4"

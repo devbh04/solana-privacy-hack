@@ -2,13 +2,15 @@
 
 import { useAppStore } from '@/lib/store';
 import { PhantomCard } from '@/components/PhantomCard';
-import { Ban, CreditCardIcon, Eye, EyeOff, Key, Tag, DollarSign, Upload, Download, ArrowLeftRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { IconCreditCard, IconKey, IconShieldLock, IconArrowsExchange, IconCash, IconHandStop, IconTrendingUp, IconTrendingDown, IconRepeat, IconSend, IconCoffee, IconShoppingCart, IconGasStation, IconDeviceMobile, IconReceipt } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 export default function CardHome() {
-  const { isCardFrozen, toggleCardFreeze, rotateCardId, balance, transactions, showCardDetails, toggleCardDetails, allActivities } = useAppStore();
+  const { isCardFrozen, toggleCardFreeze, rotateCardId, transactions, showCardDetails, toggleCardDetails, allActivities, getUsdcBalance, totalLentToPool } = useAppStore();
+  const balance = { sol: 14.24, usd: getUsdcBalance() };
 
   // Merge transactions and allActivities
   const combinedActivities = useMemo(() => {
@@ -28,27 +30,39 @@ export default function CardHome() {
     // Handle transaction icons
     if (activity.icon) {
       const iconMap: { [key: string]: any } = {
-        'local_cafe': <Tag className="w-5 h-5 text-blue-500" />,
-        'vpn_key': <Key className="w-5 h-5 text-neutral-600" />,
-        'block': <Ban className="w-5 h-5 text-red-400" />,
-        'upload': <Upload className="w-5 h-5 text-solana-purple" />,
-        'download': <Download className="w-5 h-5 text-red-400" />,
-        'payments': <DollarSign className="w-5 h-5 text-neon-green" />,
-        'swap_horiz': <ArrowLeftRight className="w-5 h-5 text-neutral-600" />,
-      };
-      return iconMap[activity.icon] || <CreditCardIcon className="w-5 h-5" />;
+        'vpn_key': <IconKey className="w-5 h-5" />,
+        'secure': <IconShieldLock className="w-5 h-5" />,
+    }
+      return iconMap[activity.icon] || <IconCreditCard className="w-5 h-5" />;
     }
     
     // Handle activity type icons
-    const typeMap: { [key: string]: string } = {
-      'payment': '💳',
-      'lend': '📤',
-      'borrow': '📥',
-      'repay': '💰',
-      'swap': '🔄',
-      'transfer': '➡️',
+    if (activity.type === 'payment') {
+      // Different icons for different merchants
+      const merchant = activity.description?.toLowerCase() || '';
+      if (merchant.includes('coffee') || merchant.includes('starbucks')) {
+        return <IconCoffee className="w-5 h-5" />;
+      }
+      if (merchant.includes('amazon') || merchant.includes('shopping')) {
+        return <IconShoppingCart className="w-5 h-5" />;
+      }
+      if (merchant.includes('gas') || merchant.includes('shell')) {
+        return <IconGasStation className="w-5 h-5" />;
+      }
+      if (merchant.includes('netflix') || merchant.includes('spotify')) {
+        return <IconDeviceMobile className="w-5 h-5" />;
+      }
+      return <IconReceipt className="w-5 h-5" />;
+    }
+    
+    const typeMap: { [key: string]: any } = {
+      'lend': <IconTrendingUp className="w-5 h-5" />,
+      'borrow': <IconTrendingDown className="w-5 h-5" />,
+      'repay': <IconCash className="w-5 h-5" />,
+      'swap': <IconArrowsExchange className="w-5 h-5" />,
+      'transfer': <IconSend className="w-5 h-5" />,
     };
-    return <span className="text-lg">{typeMap[activity.type] || '📊'}</span>;
+    return typeMap[activity.type] || <IconCreditCard className="w-5 h-5" />;
   };
 
   const getActivityColor = (activity: any) => {
@@ -136,7 +150,7 @@ export default function CardHome() {
             </p>
             <div className="flex items-baseline gap-3">
               <h1 className="text-3xl font-bold text-black tracking-tight font-mono">
-                ${balance.usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                ${totalLentToPool.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </h1>
             </div>
           </div>
@@ -209,40 +223,54 @@ export default function CardHome() {
           </div>
 
           <div className="flex flex-col">
-            {combinedActivities.slice(0, 10).map((activity, index) => (
-              <div
-                key={activity.id}
-                className={`flex items-center justify-between py-4 ${
-                  index !== combinedActivities.slice(0, 10).length - 1 ? 'border-b border-white/5' : ''
-                } hover:bg-gray-50 transition-colors -mx-2 px-2 rounded-lg border-l-2 ${getStatusColor(activity.status)}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center ${
-                    activity.status === 'blocked' ? 'text-red-400' :
-                    activity.status === 'secure' ? 'text-neon-green' :
-                    'text-gray-600'
-                  }`}>
-                    {getActivityIcon(activity)}
+            {combinedActivities.slice(0, 12).map((activity, index) => {
+              // Type guard to check if it's an Activity
+              const isActivity = 'type' in activity && activity.type !== 'rotation';
+              const isSwap = isActivity && activity.type === 'swap';
+              const swapDetails = isSwap && 'details' in activity && activity.details ? `${activity.details.from} → ${activity.details.to}` : '';
+              
+              return (
+                <div
+                  key={activity.id}
+                  className={`flex items-center justify-between py-4 ${
+                    index !== combinedActivities.slice(0, 12).length - 1 ? 'border-gray-100' : ''
+                  } hover:bg-gray-50 transition-colors -mx-2 px-2 rounded-lg border-l-2 ${getStatusColor(activity.status || 'completed')}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center ${
+                      activity.status === 'blocked' ? 'text-red-400' :
+                      activity.status === 'secure' ? 'text-neon-green' :
+                      isActivity && activity.type === 'payment' ? 'text-blue-500' :
+                      isActivity && (activity.type === 'lend' || activity.type === 'repay') ? 'text-neon-green' :
+                      isActivity && activity.type === 'borrow' ? 'text-solana-purple' :
+                      isActivity && activity.type === 'swap' ? 'text-orange-500' :
+                      'text-gray-600'
+                    }`}>
+                      {getActivityIcon(activity)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-black text-sm font-medium">
+                        {'title' in activity ? activity.title : activity.merchant}
+                      </span>
+                      <span className="text-gray-500 text-[10px] font-mono">
+                        {isSwap ? swapDetails : ('description' in activity ? activity.description : activity.message || '')}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-black text-sm font-medium">{activity.merchant}</span>
-                    <span className="text-gray-500 text-[10px] font-mono">
-                      {activity.message || (activity.txHash ? `TX: ${activity.txHash}` : '')}
-                    </span>
+                  <div className="flex flex-col items-end gap-1">
+                    {activity.amount ? (
+                      <span className={`text-sm font-mono font-bold ${getActivityColor(activity)}`}>
+                        {isActivity && activity.type === 'payment' ? '-' : isActivity && (activity.type === 'borrow' || activity.type === 'lend') ? '' : '+'}
+                        ${activity.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    ) : (
+                      getStatusBadge(activity.status || '')
+                    )}
+                    <span className="text-gray-500 text-[10px]">{activity.timestamp}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {activity.amount ? (
-                    <span className={`text-xs font-mono font-bold ${getActivityColor(activity)}`}>
-                      {activity.amount}
-                    </span>
-                  ) : (
-                    getStatusBadge(activity.status)
-                  )}
-                  <span className="text-gray-500 text-[10px]">{activity.timestamp}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

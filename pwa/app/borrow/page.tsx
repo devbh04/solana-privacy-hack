@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore } from '@/lib/store';
+import { useAppStore, BorrowingPosition } from '@/lib/store';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ShieldCheck, X, ChevronDown } from 'lucide-react';
@@ -20,8 +20,10 @@ const LOAN_PERIODS = [
 ];
 
 export default function Borrow() {
-  const profileStats = useAppStore((state) => state.profileStats);
-  const balance = useAppStore((state) => state.balance);
+  const borrowUsdc = useAppStore((state) => state.borrowUsdc);
+  const getAvailableCredit = useAppStore((state) => state.getAvailableCredit);
+  const getCreditUsed = useAppStore((state) => state.getCreditUsed);
+  const creditScore = useAppStore((state) => state.creditScore);
 
   const [activeTab, setActiveTab] = useState<'borrow' | 'repay'>('borrow');
   const [borrowAmount, setBorrowAmount] = useState(1200);
@@ -32,18 +34,19 @@ export default function Borrow() {
   const [showBorrowingInfo, setShowBorrowingInfo] = useState(false);
   const [selectedBorrowing, setSelectedBorrowing] = useState<string | null>(null);
 
-  // Calculate available credit
-  const availableCredit = profileStats.creditLimit - profileStats.creditUsed;
-  const maxBorrowable = Math.floor(availableCredit * 0.8); // 80% LTV max
+  // Calculate available credit from store
+  const availableCredit = getAvailableCredit();
+  const creditUsed = getCreditUsed();
+  const maxBorrowable = Math.floor(availableCredit); // Can borrow up to available credit
 
   // Calculate interest rate based on credit score
   const baseRate = 4.5;
-  const creditScoreBonus = profileStats.creditScore >= 750 ? 0.5 : 0;
+  const creditScoreBonus = creditScore >= 750 ? 0.5 : 0;
   const annualInterest = baseRate - creditScoreBonus;
   const rewardsRate = 0.2;
 
   // Calculate LTV
-  const ltv = ((borrowAmount / availableCredit) * 100).toFixed(0);
+  const ltv = ((creditUsed / (availableCredit + creditUsed)) * 100).toFixed(0);
 
   // Calculate health factor (simplified)
   const healthFactor = borrowAmount > 0 ? ((availableCredit / borrowAmount) * 1.8).toFixed(1) : '∞';
@@ -76,12 +79,15 @@ export default function Borrow() {
   };
 
   const handleFinalConfirm = () => {
+    const success = borrowUsdc(borrowAmount, LOAN_PERIODS[selectedPeriodIndex].days);
     setShowConfirmDialog(false);
-    alert(`Successfully borrowed ${borrowAmount} USDC for ${LOAN_PERIODS[selectedPeriodIndex].label}!`);
+    if (success) {
+      setBorrowAmount(0);
+    }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -105,7 +111,7 @@ export default function Borrow() {
           </p>
           <div className="flex items-baseline gap-3">
             <h1 className="text-3xl font-bold text-black tracking-tight font-mono">
-              {profileStats.balances.borrowed !== undefined ? (<p>{profileStats.balances.borrowed} USDC</p>) : <p>0.00 USDC</p>}
+              ${creditUsed.toLocaleString()} USDC
             </h1>
           </div>
         </div>
@@ -289,8 +295,8 @@ export default function Borrow() {
                   <div className="bg-neon-green/10 rounded-xl p-4 mt-4">
                     <p className="text-xs text-gray-600 mb-2">Based on your on-chain records:</p>
                     <ul className="text-sm space-y-1 text-gray-700">
-                      <li>• Credit Score: {profileStats.creditScore} (Excellent)</li>
-                      <li>• Active Loans: {profileStats.activeLoans}</li>
+                      <li>• Credit Score: {creditScore} (Excellent)</li>
+                      <li>• Available Credit: ${availableCredit.toLocaleString()}</li>
                       <li>• Payment History: 100% on-time</li>
                       <li>• Trust Score: High</li>
                     </ul>
@@ -401,10 +407,10 @@ export default function Borrow() {
       {/* Borrowing Info Dialog */}
       <AnimatePresence>
         {showBorrowingInfo && selectedBorrowing && (() => {
-          const borrowingActivities = useAppStore.getState().borrowingActivities;
-          const selectedBorrowingData = borrowingActivities.find(b => b.id === selectedBorrowing);
+          const borrowingPositions = useAppStore.getState().borrowingPositions;
+          const selectedBorrowingData = borrowingPositions.find((b: BorrowingPosition) => b.id === selectedBorrowing);
           if (!selectedBorrowingData) return null;
-          
+
           return (
             <>
               <motion.div
@@ -436,7 +442,7 @@ export default function Borrow() {
                     <div className="bg-linear-to-br from-solana-purple/10 to-transparent border-2 border-solana-purple/30 p-6 rounded-xl text-center">
                       <p className="text-sm text-gray-600 mb-2">Borrowed Amount</p>
                       <div className="flex items-baseline justify-center gap-2">
-                        <span className="text-4xl font-bold text-solana-purple">${selectedBorrowingData.amount}</span>
+                        <span className="text-4xl font-bold text-solana-purple">${selectedBorrowingData.principal}</span>
                         <span className="text-xl text-gray-500">USDC</span>
                       </div>
                       <div className="mt-3 pt-3 border-t border-solana-purple/20">
@@ -456,7 +462,7 @@ export default function Borrow() {
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Borrowed Date</span>
-                        <span className="font-bold text-black">{selectedBorrowingData.borrowed}</span>
+                        <span className="font-bold text-black">{selectedBorrowingData.borrowedDate}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Due Date</span>
@@ -464,7 +470,7 @@ export default function Borrow() {
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Loan Duration</span>
-                        <span className="font-bold text-black">{selectedBorrowingData.duration} days</span>
+                        <span className="font-bold text-black">{selectedBorrowingData.durationDays} days</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Interest Rate</span>
@@ -472,7 +478,7 @@ export default function Borrow() {
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                         <span className="text-sm text-gray-600">Interest Accrued</span>
-                        <span className="font-bold text-red-500">${selectedBorrowingData.interestDue.toFixed(2)} USDC</span>
+                        <span className="font-bold text-red-500">${selectedBorrowingData.accruedInterest.toFixed(2)} USDC</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b-2 border-gray-300">
                         <span className="text-sm font-semibold text-gray-800">Status</span>
@@ -527,14 +533,14 @@ export default function Borrow() {
           );
         })()}
       </AnimatePresence>
-    </motion.div>
+    </motion.div >
   );
 }
 
 // Borrowing Activity Component
 function BorrowingActivity({ onShowInfo }: { onShowInfo: (id: string) => void }) {
-  const borrowingActivities = useAppStore((state) => state.borrowingActivities);
-  const activeLoans = borrowingActivities.filter(loan => loan.status === 'active');
+  const borrowingPositions = useAppStore((state) => state.borrowingPositions);
+  const activeLoans = borrowingPositions.filter((loan: BorrowingPosition) => loan.status === 'active');
 
   if (activeLoans.length === 0) {
     return (
@@ -546,16 +552,15 @@ function BorrowingActivity({ onShowInfo }: { onShowInfo: (id: string) => void })
 
   return (
     <div className="space-y-3">
-      {activeLoans.map((loan) => (
+      {activeLoans.map((loan: BorrowingPosition) => (
         <div key={loan.id} className="">
           <div
-            key={loan.id}
             className="bg-white rounded-xl p-4"
           >
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-xl font-bold text-black">${loan.amount} USDC</p>
-                <p className="text-xs text-gray-500">Borrowed on {loan.borrowed}</p>
+                <p className="text-xl font-bold text-black">${loan.principal} USDC</p>
+                <p className="text-xs text-gray-500">Borrowed on {loan.borrowedDate}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase tracking-widest">Due Date</p>

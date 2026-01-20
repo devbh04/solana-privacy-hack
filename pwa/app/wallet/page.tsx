@@ -9,27 +9,34 @@ import { QRCodeSVG } from 'qrcode.react';
 
 export default function Wallet() {
   const walletAddress = useAppStore((state) => state.walletAddress);
-  const profileStats = useAppStore((state) => state.profileStats);
-  const swapState = useAppStore((state) => state.swapState);
+  const getProfileStats = useAppStore((state) => state.getProfileStats);
+  const wallet = useAppStore((state) => state.wallet);
+  const getActualUsdcBalance = useAppStore((state) => state.getActualUsdcBalance);
+  const getBorrowedUsdcBalance = useAppStore((state) => state.getBorrowedUsdcBalance);
   const allActivities = useAppStore((state) => state.allActivities);
-  
+
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showReceiveDialog, setShowReceiveDialog] = useState(false);
   const [sendAddress, setSendAddress] = useState('');
   const [sendAmount, setSendAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState<'SOL' | 'USDC'>('USDC');
   const [copied, setCopied] = useState(false);
-  
-  // Calculate wallet values
-  const totalValue = parseFloat(profileStats.balances.total.replace(/[$,]/g, ''));
-  const actualBalance = parseFloat(profileStats.balances.wallet.replace(/[$,]/g, ''));
-  const borrowedAmount = parseFloat(profileStats.balances.borrowed.replace(/[$,]/g, ''));
-  
-  // Calculate asset values
-  const solValue = swapState.fromToken.balance * swapState.fromToken.price;
-  const usdcValue = swapState.toToken.balance * swapState.toToken.price;
+
+  // Get profile stats
+  const profileStats = getProfileStats();
+
+  // Calculate wallet values from tokens
+  const totalValue = wallet.tokens.reduce((sum, token) => sum + (token.balance * token.price), 0);
+  const borrowedAmount = getBorrowedUsdcBalance();
+  const actualBalance = totalValue - borrowedAmount; // Total portfolio value minus what's borrowed
+
+  // Get tokens from wallet
+  const solToken = wallet.tokens.find(t => t.symbol === 'SOL');
+  const usdcToken = wallet.tokens.find(t => t.symbol === 'USDC');
+  const solValue = solToken ? solToken.balance * solToken.price : 0;
+  const usdcValue = usdcToken ? usdcToken.balance * usdcToken.price : 0;
   const totalAssetValue = solValue + usdcValue;
-  
+
   // Get icon for activity type
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -49,14 +56,14 @@ export default function Wallet() {
         return '📊';
     }
   };
-  
+
   const handleCopyAddress = () => {
     const address = walletAddress || '0x742d...f44e';
     navigator.clipboard.writeText(address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
+
   const handleSend = () => {
     // TODO: Implement actual send logic
     alert(`Sending ${sendAmount} ${selectedToken} to ${sendAddress}`);
@@ -64,16 +71,16 @@ export default function Wallet() {
     setSendAddress('');
     setSendAmount('');
   };
-  
+
   const getMaxBalance = () => {
     if (selectedToken === 'SOL') {
-      return swapState.fromToken.balance;
+      return solToken?.balance || 0;
     }
-    return swapState.toToken.balance;
+    return usdcToken?.balance || 0;
   };
-  
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -102,7 +109,7 @@ export default function Wallet() {
             </div>
             <IconWallet className="w-5 h-5 text-neon-green" />
           </div>
-          
+
           <div className="mb-4">
             <h2 className="text-4xl font-bold text-black mb-1">
               ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -135,14 +142,14 @@ export default function Wallet() {
 
         {/* Send and Receive */}
         <div className="flex justify-between mb-6">
-          <button 
+          <button
             onClick={() => setShowSendDialog(true)}
             className="flex-1 bg-neon-green text-black py-3 mr-2 rounded-2xl hover:bg-neon-green/80 transition-colors flex items-center justify-center gap-2"
           >
             <ArrowUpRight className="w-4 h-4" />
             Send
           </button>
-          <button 
+          <button
             onClick={() => setShowReceiveDialog(true)}
             className="flex-1 bg-solana-purple text-white py-3 ml-2 rounded-2xl hover:bg-solana-purple/80 transition-colors flex items-center justify-center gap-2"
           >
@@ -159,20 +166,20 @@ export default function Wallet() {
               Assets
             </h2>
           </div>
-          
+
           <div className="space-y-3">
             {/* SOL */}
             <div className="bg-white p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Logo" className='w-8 h-8'/>
+                  <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Logo" className='w-8 h-8' />
                   <div>
-                    <p className="font-bold text-lg">{swapState.fromToken.symbol}</p>
-                    <p className="text-xs text-gray-500">{swapState.fromToken.name}</p>
+                    <p className="font-bold text-lg">{solToken?.symbol || 'SOL'}</p>
+                    <p className="text-xs text-gray-500">{solToken?.name || 'Solana'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{swapState.fromToken.balance.toFixed(2)}</p>
+                  <p className="font-bold text-lg">{(solToken?.balance || 0).toFixed(2)}</p>
                   <p className="text-xs text-gray-500">
                     ${solValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
@@ -184,14 +191,14 @@ export default function Wallet() {
             <div className="bg-white p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC Logo" className='w-8 h-8'/>
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC Logo" className='w-8 h-8' />
                   <div>
-                    <p className="font-bold text-lg">{swapState.toToken.symbol}</p>
-                    <p className="text-xs text-gray-500">{swapState.toToken.name}</p>
+                    <p className="font-bold text-lg">{usdcToken?.symbol || 'USDC'}</p>
+                    <p className="text-xs text-gray-500">{usdcToken?.name || 'USD Coin'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{swapState.toToken.balance.toFixed(2)}</p>
+                  <p className="font-bold text-lg">{(usdcToken?.balance || 0).toFixed(2)}</p>
                   <p className="text-xs text-gray-500">
                     ${usdcValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
@@ -237,33 +244,31 @@ export default function Wallet() {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setSelectedToken('SOL')}
-                        className={`p-4 rounded-xl border-2 transition-all ${
-                          selectedToken === 'SOL'
-                            ? 'border-neon-green bg-neon-green/10'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-4 rounded-xl border-2 transition-all ${selectedToken === 'SOL'
+                          ? 'border-neon-green bg-neon-green/10'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" className="w-6 h-6" />
                           <div className="text-left">
                             <p className="font-bold text-sm">SOL</p>
-                            <p className="text-xs text-gray-500">{swapState.fromToken.balance.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">{(solToken?.balance || 0).toFixed(2)}</p>
                           </div>
                         </div>
                       </button>
                       <button
                         onClick={() => setSelectedToken('USDC')}
-                        className={`p-4 rounded-xl border-2 transition-all ${
-                          selectedToken === 'USDC'
-                            ? 'border-neon-green bg-neon-green/10'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-4 rounded-xl border-2 transition-all ${selectedToken === 'USDC'
+                          ? 'border-neon-green bg-neon-green/10'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="w-6 h-6" />
                           <div className="text-left">
                             <p className="font-bold text-sm">USDC</p>
-                            <p className="text-xs text-gray-500">{swapState.toToken.balance.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">{(usdcToken?.balance || 0).toFixed(2)}</p>
                           </div>
                         </div>
                       </button>
@@ -428,7 +433,7 @@ export default function Wallet() {
               </div>
             </motion.div>
           </>
-)}
+        )}
       </AnimatePresence>
     </motion.div>
   );

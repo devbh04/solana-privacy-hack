@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore } from '@/lib/store';
+import { BorrowingPosition, useAppStore } from '@/lib/store';
 import { ArrowDown, CreditCardIcon, Download, Handshake, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,19 +11,26 @@ export default function ProfileActivity() {
   const router = useRouter();
   const disconnectWallet = useAppStore((state) => state.disconnectWallet);
   const walletAddress = useAppStore((state) => state.walletAddress);
-  const profileStats = useAppStore((state) => state.profileStats);
+  const getProfileStats = useAppStore((state) => state.getProfileStats);
   const isCardFrozen = useAppStore((state) => state.isCardFrozen);
   const toggleCardFreeze = useAppStore((state) => state.toggleCardFreeze);
+  const borrowingPositions = useAppStore((state) => state.borrowingPositions);
+  const activeLoans = borrowingPositions.filter((loan: BorrowingPosition) => loan.status === 'active');
 
   const [balanceView, setBalanceView] = useState<'wallet' | 'borrowed' | 'lent'>('wallet');
   const [showStats, setShowStats] = useState(false);
+
+  // Get profile stats
+  const profileStats = getProfileStats();
 
   const handleDisconnect = () => {
     disconnectWallet();
     router.push('/');
   };
 
-  const creditUtilization = Math.round((profileStats.creditUsed / profileStats.creditLimit) * 100);
+  const creditUtilization = profileStats.creditLimit > 0
+    ? Math.round((profileStats.creditUsed / profileStats.creditLimit) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -112,8 +119,8 @@ export default function ProfileActivity() {
                   <button
                     onClick={() => setBalanceView('wallet')}
                     className={`flex-1 px-3 py-1.5 rounded text-[10px] font-mono font-bold tracking-wider transition-all ${balanceView === 'wallet'
-                        ? 'bg-neon-green/5 text-neon-green border border-neon-green'
-                        : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
+                      ? 'bg-neon-green/5 text-neon-green border border-neon-green'
+                      : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
                       }`}
                   >
                     WALLET
@@ -121,8 +128,8 @@ export default function ProfileActivity() {
                   <button
                     onClick={() => setBalanceView('borrowed')}
                     className={`flex-1 px-3 py-1.5 rounded text-[10px] font-mono font-bold tracking-wider transition-all ${balanceView === 'borrowed'
-                        ? 'bg-solana-purple/10 border border-solana-purple'
-                        : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
+                      ? 'bg-solana-purple/10 border border-solana-purple'
+                      : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
                       }`}
                   >
                     BORROWED
@@ -130,8 +137,8 @@ export default function ProfileActivity() {
                   <button
                     onClick={() => setBalanceView('lent')}
                     className={`flex-1 px-3 py-1.5 rounded text-[10px] font-mono font-bold tracking-wider transition-all ${balanceView === 'lent'
-                        ? 'bg-blue-500/5 text-blue-500 border border-blue-500'
-                        : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
+                      ? 'bg-blue-500/5 text-blue-500 border border-blue-500'
+                      : 'bg-transparent text-gray-500 border border-gray-700 hover:border-gray-600'
                       }`}
                   >
                     LENT
@@ -174,98 +181,98 @@ export default function ProfileActivity() {
 
             {/* Collapsible 4-Card Grid */}
             <AnimatePresence>
-            {showStats && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >            {/* Second Row - Grid of 4 */}
-            <div className="grid grid-cols-4 gap-2">
-              {/* Credit Score */}
-              <div className="relative bg-white rounded-xl p-5 border-2 border-solana-purple/30">
+              {showStats && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >            {/* Second Row - Grid of 4 */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {/* Credit Score */}
+                    <div className="relative bg-white rounded-xl p-5 border-2 border-solana-purple/30">
 
-                <div className="flex flex-col h-full justify-between">
-                  <p className="text-solana-purple/80 text-xs font-mono tracking-widest uppercase mb-1">
-                    SCORE
-                  </p>
-                  <div>
-                    <div className="text-2xl font-mono text-black font-medium tracking-tight">
-                      {profileStats.creditScore}
+                      <div className="flex flex-col h-full justify-between">
+                        <p className="text-solana-purple/80 text-xs font-mono tracking-widest uppercase mb-1">
+                          SCORE
+                        </p>
+                        <div>
+                          <div className="text-2xl font-mono text-black font-medium tracking-tight">
+                            {profileStats.creditScore}
+                          </div>
+                          <div className="text-gray-500 text-[10px] font-mono mt-1">CREDIT</div>
+                        </div>
+                        <div className="mt-auto">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-neon-green/10 text-neon-green border border-neon-green/20">
+                            GOOD
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-500 text-[10px] font-mono mt-1">CREDIT</div>
-                  </div>
-                  <div className="mt-auto">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-neon-green/10 text-neon-green border border-neon-green/20">
-                      GOOD
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Active Loans */}
-              <div className="relative bg-white rounded-xl p-5 border-2 border-red-400/30">
+                    {/* Active Loans */}
+                    <div className="relative bg-white rounded-xl p-5 border-2 border-red-400/30">
 
-                <div className="flex flex-col h-full justify-between">
-                  <p className="text-red-400/80 text-xs font-mono tracking-widest uppercase mb-1">
-                    LOANS
-                  </p>
-                  <div>
-                    <div className="text-2xl font-mono text-black font-medium tracking-tight">
-                      {profileStats.activeLoans}
+                      <div className="flex flex-col h-full justify-between">
+                        <p className="text-red-400/80 text-xs font-mono tracking-widest uppercase mb-1">
+                          LOANS
+                        </p>
+                        <div>
+                          <div className="text-2xl font-mono text-black font-medium tracking-tight">
+                            {activeLoans.length}
+                          </div>
+                          <div className="text-gray-500 text-[10px] font-mono mt-1">ACTIVE</div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-auto">
+                          <span className="text-solana-purple text-xs">●</span>
+                          <span className="text-solana-purple text-xs font-mono">LIVE</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-500 text-[10px] font-mono mt-1">ACTIVE</div>
-                  </div>
-                  <div className="flex items-center gap-1 mt-auto">
-                    <span className="text-solana-purple text-xs">●</span>
-                    <span className="text-solana-purple text-xs font-mono">LIVE</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* APY */}
-              <div className="relative bg-white rounded-xl p-5 border-2 border-neon-green/30">
+                    {/* APY */}
+                    <div className="relative bg-white rounded-xl p-5 border-2 border-neon-green/30">
 
-                <div className="flex flex-col h-full justify-between">
-                  <p className="text-neon-green/80 text-xs font-mono tracking-widest uppercase mb-1">
-                    APY
-                  </p>
-                  <div>
-                    <div className="text-2xl font-mono text-black font-medium tracking-tight">
-                      8.5%
+                      <div className="flex flex-col h-full justify-between">
+                        <p className="text-neon-green/80 text-xs font-mono tracking-widest uppercase mb-1">
+                          APY
+                        </p>
+                        <div>
+                          <div className="text-2xl font-mono text-black font-medium tracking-tight">
+                            8.5%
+                          </div>
+                          <div className="text-gray-500 text-[10px] font-mono mt-1">EARNING</div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-auto">
+                          <span className="text-neon-green text-xs">↑</span>
+                          <span className="text-neon-green text-xs font-mono">YIELD</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-500 text-[10px] font-mono mt-1">EARNING</div>
-                  </div>
-                  <div className="flex items-center gap-1 mt-auto">
-                    <span className="text-neon-green text-xs">↑</span>
-                    <span className="text-neon-green text-xs font-mono">YIELD</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Health Factor */}
-              <div className="relative bg-white rounded-xl p-5 border-2 border-blue-400/30">
+                    {/* Health Factor */}
+                    <div className="relative bg-white rounded-xl p-5 border-2 border-blue-400/30">
 
-                <div className="flex flex-col h-full justify-between">
-                  <p className="text-blue-400/80 text-xs font-mono tracking-widest uppercase mb-1">
-                    HEALTH
-                  </p>
-                  <div>
-                    <div className="text-2xl font-mono text-black font-medium tracking-tight">
-                      2.4
+                      <div className="flex flex-col h-full justify-between">
+                        <p className="text-blue-400/80 text-xs font-mono tracking-widest uppercase mb-1">
+                          HEALTH
+                        </p>
+                        <div>
+                          <div className="text-2xl font-mono text-black font-medium tracking-tight">
+                            2.4
+                          </div>
+                          <div className="text-gray-500 text-[10px] font-mono mt-1">FACTOR</div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-auto">
+                          <span className="text-blue-400 text-xs">●</span>
+                          <span className="text-blue-400 text-xs font-mono">SAFE</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-500 text-[10px] font-mono mt-1">FACTOR</div>
                   </div>
-                  <div className="flex items-center gap-1 mt-auto">
-                    <span className="text-blue-400 text-xs">●</span>
-                    <span className="text-blue-400 text-xs font-mono">SAFE</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </motion.div>
-            )}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
