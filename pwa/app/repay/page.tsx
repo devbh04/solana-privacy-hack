@@ -193,7 +193,7 @@ export default function Repay() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Repayment Details</h3>
@@ -313,7 +313,7 @@ export default function Repay() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Confirm Repayment</h3>

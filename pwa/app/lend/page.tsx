@@ -281,7 +281,7 @@ export default function Lend() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[70vh] flex flex-col"
+              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[70vh] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-xl font-bold">APY Breakdown</h3>
@@ -343,7 +343,7 @@ export default function Lend() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Confirm Lending</h3>
@@ -435,7 +435,7 @@ export default function Lend() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Withdraw Funds</h3>
@@ -540,7 +540,7 @@ export default function Lend() {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed bottom-19 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
+                className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[80vh] flex flex-col"
               >
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold">Lending Position Details</h3>
