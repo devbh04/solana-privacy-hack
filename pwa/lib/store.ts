@@ -85,8 +85,14 @@ interface AppState {
   isAuthenticated: boolean;
   walletAddress: string | null;
   isHydrated: boolean;
+  
+  // Solana Wallet Integration
+  solanaWalletAddress: string | null;
+  isSolanaWalletConnected: boolean;
+  
   setIsAuthenticated: (value: boolean) => void;
   setWalletAddress: (address: string | null) => void;
+  setSolanaWallet: (address: string | null, connected: boolean) => void;
   initializeAuth: () => void;
   connectWallet: () => void;
   disconnectWallet: () => void;
@@ -411,6 +417,10 @@ export const useAppStore = create<AppState>()(
       isAuthenticated: false,
       walletAddress: null,
       isHydrated: false,
+      
+      // Solana Wallet
+      solanaWalletAddress: null,
+      isSolanaWalletConnected: false,
 
       // UI State
       isActionDialogOpen: false,
@@ -584,6 +594,10 @@ export const useAppStore = create<AppState>()(
 
       setIsAuthenticated: (value) => set({ isAuthenticated: value }),
       setWalletAddress: (address) => set({ walletAddress: address }),
+      setSolanaWallet: (address, connected) => set({ 
+        solanaWalletAddress: address, 
+        isSolanaWalletConnected: connected 
+      }),
 
       initializeAuth: () => {
         if (typeof window !== 'undefined') {

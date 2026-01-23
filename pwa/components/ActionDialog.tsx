@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import { useEffect } from 'react';
 import { IconDownload } from '@tabler/icons-react';
-import { Handshake, Send, X } from 'lucide-react';
+import { Handshake, Send, X, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function ActionDialog() {
@@ -36,6 +36,14 @@ export function ActionDialog() {
       color: '#3b82f6',
       bgGradient: '',
       description: 'Pay back your loans'
+    },
+    { 
+      label: 'Private Payments', 
+      href: '/private-payments',
+      icon: <Lock size={28} />,
+      color: '#8b5cf6',
+      bgGradient: '',
+      description: 'Send & receive privately'
     },
   ];
 

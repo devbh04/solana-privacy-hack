@@ -6,6 +6,8 @@ import "./globals.css";
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { ActionDialog } from "@/components/ActionDialog";
+import { WalletProviders } from "@/lib/wallet-providers";
+import { ThemeProvider } from "next-themes";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -24,7 +26,7 @@ export default function RootLayout({
   const showNavbar = pathname !== '/';
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <title>PhantomCard</title>
         <meta name="description" content="NFC Enabled Web3 Credit Card" />
@@ -32,9 +34,13 @@ export default function RootLayout({
       <body
         className={`${jetbrainsMono.variable} antialiased`}
       >
-        {children}
-        {showNavbar && <BottomNav />}
-        <ActionDialog />
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <WalletProviders>
+            {children}
+            {showNavbar && <BottomNav />}
+            <ActionDialog />
+          </WalletProviders>
+        </ThemeProvider>
       </body>
     </html>
   );

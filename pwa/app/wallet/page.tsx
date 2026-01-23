@@ -6,8 +6,11 @@ import { TrendingUp, TrendingDown, Wallet2, Activity, ArrowUpRight, ArrowDownRig
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function Wallet() {
+  const { publicKey, connected } = useWallet();
   const walletAddress = useAppStore((state) => state.walletAddress);
   const getProfileStats = useAppStore((state) => state.getProfileStats);
   const wallet = useAppStore((state) => state.wallet);
@@ -88,12 +91,31 @@ export default function Wallet() {
       className="min-h-screen bg-white text-black pb-28"
     >
       {/* Header */}
-      <div className="flex items-center py-8 px-6 pb-4">
+      <div className="flex items-center justify-between py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
           <span className="text-neon-green">$</span>
           <h1 className="text-3xl font-bold text-black">Wallet</h1>
         </div>
+        <WalletMultiButton style={{ fontSize: '12px', padding: '8px 16px', height: 'auto' }} />
       </div>
+
+      {/* Solana Wallet Connection Status */}
+      {connected && publicKey && (
+        <div className="px-6 mb-4">
+          <div className="bg-linear-to-r from-purple-100 to-green-100 dark:from-purple-950/20 dark:to-green-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-bold text-purple-900 dark:text-purple-200">Solana Wallet Connected</span>
+            </div>
+            <div className="text-xs font-mono text-black dark:text-white break-all">
+              {publicKey.toBase58()}
+            </div>
+            <div className="mt-2 text-[10px] text-purple-700 dark:text-purple-300">
+              Use this wallet for private payments
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6">
         {/* Wallet Overview Card */}

@@ -4,14 +4,39 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { Nfc } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 export default function Home() {
   const router = useRouter();
+  const { publicKey, connected } = useWallet();
+  const { setVisible } = useWalletModal();
   const connectWallet = useAppStore((state) => state.connectWallet);
+  const setSolanaWallet = useAppStore((state) => state.setSolanaWallet);
+  const setIsAuthenticated = useAppStore((state) => state.setIsAuthenticated);
+  const setWalletAddress = useAppStore((state) => state.setWalletAddress);
   const initializeAuth = useAppStore((state) => state.initializeAuth);
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const isHydrated = useAppStore((state) => state.isHydrated);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Sync Solana wallet state with Zustand store and localStorage
+  useEffect(() => {
+    if (connected && publicKey) {
+      const address = publicKey.toBase58();
+      setSolanaWallet(address, true);
+      setIsAuthenticated(true);
+      setWalletAddress(address);
+      
+      // Store in localStorage for routing restrictions
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('walletAddress', address);
+      }
+    } else {
+      setSolanaWallet(null, false);
+    }
+  }, [connected, publicKey, setSolanaWallet, setIsAuthenticated, setWalletAddress]);
 
   // Initialize auth on mount
   useEffect(() => {
@@ -26,15 +51,21 @@ export default function Home() {
   }, [isHydrated, isAuthenticated, router]);
 
   const handleConnectWallet = () => {
-    setIsConnecting(true);
-    connectWallet();
-    
-    // Simulate connection delay then redirect
-    setTimeout(() => {
-      setIsConnecting(false);
+    if (connected && publicKey) {
+      // Already connected, just navigate
       router.push('/card-home');
-    }, 1000);
+    } else {
+      // Open wallet selection modal
+      setVisible(true);
+    }
   };
+
+  // Auto-redirect when wallet connects
+  useEffect(() => {
+    if (connected && publicKey && isHydrated) {
+      router.push('/card-home');
+    }
+  }, [connected, publicKey, isHydrated, router]);
 
   // Show loading or nothing while checking auth
   if (!isHydrated) {
@@ -119,7 +150,7 @@ export default function Home() {
               disabled={isConnecting}
               className="w-full h-14 rounded-full bg-neon-green text-black font-bold text-base tracking-wide uppercase hover:bg-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              {connected ? 'Enter App' : 'Connect Wallet'}
             </button>
             <button className="w-full h-14 rounded-full bg-white border-2 border-solana-purple/50 text-black font-bold text-base tracking-wide uppercase hover:bg-solana-purple hover:text-white hover:border-solana-purple transition-all duration-200 flex items-center justify-center gap-2 group">
               <span>Request NFC Card</span>
