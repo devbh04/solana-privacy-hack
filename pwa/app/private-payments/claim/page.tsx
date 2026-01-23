@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
@@ -11,7 +11,7 @@ import { ArrowLeft, Coins } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function ClaimPage() {
+function ClaimPageContent() {
   const searchParams = useSearchParams();
   const { connection } = useConnection();
   const { publicKey } = useWallet();
@@ -335,5 +335,20 @@ export default function ClaimPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ClaimPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-gray-950 font-mono flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ClaimPageContent />
+    </Suspense>
   );
 }
