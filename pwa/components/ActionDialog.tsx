@@ -38,7 +38,7 @@ export function ActionDialog() {
       description: 'Pay back your loans'
     },
     { 
-      label: 'Private Payments', 
+      label: 'P-Links', 
       href: '/private-payments',
       icon: <Lock size={28} />,
       color: '#8b5cf6',
@@ -136,6 +136,7 @@ export function ActionDialog() {
                         {/* Text Content */}
                         <div className="flex-1 text-left">
                           <div className="font-bold text-lg tracking-tight">{action.label}</div>
+                          {action.label === "P-Links" ? <div className="text-xs text-black/50 tracking-tight">Private Payments</div> : <></>}
                           <div className="text-xs text-gray-500 font-medium mt-0.5">
                             {action.description}
                           </div>

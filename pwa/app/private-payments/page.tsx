@@ -10,7 +10,7 @@ export default function PrivatePaymentsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 font-mono pb-20">
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+      {/* <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -25,11 +25,19 @@ export default function PrivatePaymentsPage() {
             <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
           </div>
         </div>
-      </header>
+      </header> */}
+      {/* Header */}
+      <div className="flex justify-between items-center py-8 px-6 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-neon-green">$</span>
+          <h1 className="text-3xl font-bold text-black">P-Links</h1>
+        </div>
+        <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
+      </div>
 
-      <main className="max-w-md mx-auto px-4 py-6">
+      <main className="max-w-md mx-auto px-4 pb-6">
         <div className="bg-linear-to-br from-purple-50 to-green-50 dark:from-purple-950/20 dark:to-green-950/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-4">
             <div>
               <h1 className="text-lg font-bold text-black dark:text-white">Privacy Payments</h1>
               <p className="text-xs text-gray-600 dark:text-gray-400">Powered by Light Protocol</p>
