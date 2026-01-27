@@ -5,7 +5,6 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
-import { ActionDialog } from "@/components/ActionDialog";
 import { WalletProviders } from "@/lib/wallet-providers";
 import { ThemeProvider } from "next-themes";
 
@@ -22,14 +21,14 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   
-  // Show navbar on all pages except the landing page
-  const showNavbar = pathname !== '/';
+  // Show navbar on wallet and private-payments pages
+  const showNavbar = pathname.startsWith('/wallet') || pathname.startsWith('/private-payments');
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>PhantomCard</title>
-        <meta name="description" content="NFC Enabled Web3 Credit Card" />
+        <title>PhantomCard - Privacy Payments</title>
+        <meta name="description" content="Zero-Knowledge Privacy Payments on Solana" />
       </head>
       <body
         className={`${jetbrainsMono.variable} antialiased`}
@@ -38,7 +37,6 @@ export default function RootLayout({
           <WalletProviders>
             {children}
             {showNavbar && <BottomNav />}
-            <ActionDialog />
           </WalletProviders>
         </ThemeProvider>
       </body>

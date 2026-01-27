@@ -7,7 +7,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { withdraw, getUtxos, getBalanceFromUtxos, getConfig } from "privacycash/utils";
 import { encryptionServiceFromSecretBytes, getLightWasm } from "@/lib/privacycashClient";
 import { decodeSecretBase58 } from "@/lib/paymentLink";
-import { ArrowLeft, Coins } from "lucide-react";
+import { Coins, Lock, Plus, Download } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -185,16 +185,17 @@ function ClaimPageContent() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/private-payments" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
-              <ArrowLeft size={18} />
-              <span className="text-sm">Back</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-neon-green">$</span>
+              <h1 className="text-xl font-bold text-black dark:text-white">P-Links</h1>
+            </div>
             <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
           </div>
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
+        {/* Claim Section */}
         <div className="bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">

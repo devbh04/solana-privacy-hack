@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { buildPaymentLinkUrl, generateLinkId } from "@/lib/paymentLink";
-import { Plus, Copy, ArrowLeft, Check } from "lucide-react";
+import { Plus, Copy, Check, Download, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function CreatePage() {
@@ -35,16 +35,33 @@ export default function CreatePage() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/private-payments" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
-              <ArrowLeft size={18} />
-              <span className="text-sm">Back</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-neon-green">$</span>
+              <h1 className="text-xl font-bold text-black dark:text-white">P-Links</h1>
+            </div>
             <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
           </div>
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
+        {/* Info Section */}
+        <div className="bg-linear-to-br from-neon-green/10 to-neon-green/5 rounded-2xl p-6 border border-neon-green/20 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-neon-green/20 flex items-center justify-center">
+              <Lock size={20} className="text-neon-green" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-black dark:text-white">Privacy Payments</h2>
+              <p className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">Zero-Knowledge Proofs</p>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            Request payments privately <span className="font-semibold text-neon-green">without exposing your wallet</span>. Create a payment request, share the link, and the payer generates a secret that only they can share with you.
+          </p>
+        </div>
+
         <div className="bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
@@ -121,6 +138,29 @@ export default function CreatePage() {
             </div>
           </>
         )}
+
+        {/* How it works */}
+        <div className="mb-6 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 mt-10">
+          <h3 className="font-bold text-sm text-black dark:text-white mb-3">How it works</h3>
+          <ul className="space-y-3 text-xs text-gray-600 dark:text-gray-400">
+            <li className="flex gap-2">
+              <span className="text-neon-green font-bold">1.</span>
+              <span><strong className="text-black dark:text-white">Recipient</strong> creates a payment request specifying the amount needed</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-neon-green font-bold">2.</span>
+              <span><strong className="text-black dark:text-white">Payer</strong> deposits funds using zero-knowledge proofs and receives a secret</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-neon-green font-bold">3.</span>
+              <span><strong className="text-black dark:text-white">Payer</strong> shares the secret privately with the recipient</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-neon-green font-bold">4.</span>
+              <span><strong className="text-black dark:text-white">Recipient</strong> claims funds to any wallet using the secret</span>
+            </li>
+          </ul>
+        </div>
       </main>
     </div>
   );

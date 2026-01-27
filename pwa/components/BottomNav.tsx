@@ -2,39 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAppStore } from '@/lib/store';
-import { IconCreditCard, IconTransfer, IconUser, IconWallet } from '@tabler/icons-react';
+import { IconWallet } from '@tabler/icons-react';
+import { Plus, Download, Coins } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
-  const setIsActionDialogOpen = useAppStore((state) => state.setIsActionDialogOpen);
 
   const navItems = [
-    { href: '/card-home', label: 'Card', icon: <IconCreditCard size={20} /> },
-    { href: '/swap', label: 'Swap', icon: <IconTransfer size={20} /> },
-    { href: '#', label: '', icon: '', isCenter: true },
+    { href: '/private-payments/create', label: 'Create', icon: <Plus size={20} /> },
+    { href: '/private-payments/deposit', label: 'Deposit', icon: <Download size={20} /> },
+    { href: '/private-payments/claim', label: 'Claim', icon: <Coins size={20} /> },
     { href: '/wallet', label: 'Wallet', icon: <IconWallet size={20} /> },
-    { href: '/profile-activity', label: 'Profile', icon: <IconUser size={20} /> },
   ];
 
   return (
-    <nav className="fixed -bottom-0.5 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="max-w-md mx-auto px-4 h-16 flex items-center">
-        {navItems.map((item, index) => {
-          if (item.isCenter) {
-            return (
-              <div key="center" className="flex-1 flex flex-col items-center gap-1">
-                <button
-                  onClick={() => setIsActionDialogOpen(true)}
-                  className="relative -top-4 w-14 h-14 bg-neon-green hover:bg-white rounded-full flex items-center justify-center text-black text-2xl font-bold transition-all duration-200 shadow-lg shadow-neon-green/50"
-                >
-                  +
-                </button>
-              </div>
-            );
-          }
-
-          const isActive = pathname === item.href;
+    <nav className="fixed bottom-2 left-0 right-0 bg-white border rounded-4xl border-gray-200 z-50 mx-4">
+      <div className="max-w-md mx-auto px-2 h-16 flex items-center justify-center">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== '/wallet' && pathname.startsWith(item.href));
 
           return (
             <Link

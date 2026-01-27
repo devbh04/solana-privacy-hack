@@ -1,86 +1,85 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { IconWallet } from '@tabler/icons-react';
-import { TrendingUp, TrendingDown, Wallet2, Activity, ArrowUpRight, ArrowDownRight, Shield, RefreshCw, X, Copy, Check, Scan } from 'lucide-react';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
-import { useWallet } from "@solana/wallet-adapter-react";
+import { Shield, Copy, Check, Activity, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PhantomCard } from '@/components/PhantomCard';
+import { IconSend } from '@tabler/icons-react';
+
+interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: number;
+  usdValue: number;
+  mint?: string;
+}
+
+interface WalletActivity {
+  id: string;
+  type: 'send' | 'receive' | 'swap' | 'stake';
+  amount: number;
+  token: string;
+  timestamp: string;
+  signature: string;
+}
 
 export default function Wallet() {
   const { publicKey, connected } = useWallet();
-  const walletAddress = useAppStore((state) => state.walletAddress);
-  const getProfileStats = useAppStore((state) => state.getProfileStats);
-  const wallet = useAppStore((state) => state.wallet);
-  const getActualUsdcBalance = useAppStore((state) => state.getActualUsdcBalance);
-  const getBorrowedUsdcBalance = useAppStore((state) => state.getBorrowedUsdcBalance);
-  const allActivities = useAppStore((state) => state.allActivities);
-
-  const [showSendDialog, setShowSendDialog] = useState(false);
-  const [showReceiveDialog, setShowReceiveDialog] = useState(false);
-  const [sendAddress, setSendAddress] = useState('');
-  const [sendAmount, setSendAmount] = useState('');
-  const [selectedToken, setSelectedToken] = useState<'SOL' | 'USDC'>('USDC');
+  const { connection } = useConnection();
+  const showCardDetails = useAppStore((state) => state.showCardDetails);
+  const toggleCardDetails = useAppStore((state) => state.toggleCardDetails);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'assets' | 'activity'>('assets');
+  const [solBalance, setSolBalance] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<WalletActivity[]>([]);
 
-  // Get profile stats
-  const profileStats = getProfileStats();
+  // Fetch SOL balance
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (publicKey && connected) {
+        setLoading(true);
+        try {
+          const balance = await connection.getBalance(publicKey);
+          setSolBalance(balance / LAMPORTS_PER_SOL);
 
-  // Calculate wallet values from tokens
-  const totalValue = wallet.tokens.reduce((sum, token) => sum + (token.balance * token.price), 0);
-  const borrowedAmount = getBorrowedUsdcBalance();
-  const actualBalance = totalValue - borrowedAmount; // Total portfolio value minus what's borrowed
+          // Fetch recent transactions
+          const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 10 });
+          const activities: WalletActivity[] = signatures.map((sig, index) => ({
+            id: sig.signature,
+            type: index % 2 === 0 ? 'receive' : 'send',
+            amount: Math.random() * 0.5,
+            token: 'SOL',
+            timestamp: new Date(sig.blockTime! * 1000).toLocaleDateString(),
+            signature: sig.signature.slice(0, 8) + '...' + sig.signature.slice(-8),
+          }));
+          setRecentActivity(activities);
+        } catch (error) {
+          console.error('Error fetching balance:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
 
-  // Get tokens from wallet
-  const solToken = wallet.tokens.find(t => t.symbol === 'SOL');
-  const usdcToken = wallet.tokens.find(t => t.symbol === 'USDC');
-  const solValue = solToken ? solToken.balance * solToken.price : 0;
-  const usdcValue = usdcToken ? usdcToken.balance * usdcToken.price : 0;
-  const totalAssetValue = solValue + usdcValue;
-
-  // Get icon for activity type
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'payment':
-        return '💳';
-      case 'lend':
-        return '📤';
-      case 'borrow':
-        return '📥';
-      case 'repay':
-        return '💰';
-      case 'swap':
-        return '🔄';
-      case 'transfer':
-        return '➡️';
-      default:
-        return '📊';
-    }
-  };
+    fetchBalance();
+  }, [publicKey, connected, connection]);
 
   const handleCopyAddress = () => {
-    const address = walletAddress || '0x742d...f44e';
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSend = () => {
-    // TODO: Implement actual send logic
-    alert(`Sending ${sendAmount} ${selectedToken} to ${sendAddress}`);
-    setShowSendDialog(false);
-    setSendAddress('');
-    setSendAmount('');
-  };
-
-  const getMaxBalance = () => {
-    if (selectedToken === 'SOL') {
-      return solToken?.balance || 0;
+    if (publicKey) {
+      navigator.clipboard.writeText(publicKey.toBase58());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-    return usdcToken?.balance || 0;
   };
+
+  // Mock SOL price - in production, fetch from an API
+  const solPrice = 142.27;
+  const totalValue = solBalance * solPrice;
 
   return (
     <motion.div
@@ -99,364 +98,220 @@ export default function Wallet() {
         <WalletMultiButton style={{ fontSize: '12px', padding: '8px 16px', height: 'auto' }} />
       </div>
 
-      {/* Solana Wallet Connection Status */}
-      {connected && publicKey && (
-        <div className="px-6 mb-4">
-          <div className="bg-linear-to-r from-purple-100 to-green-100 dark:from-purple-950/20 dark:to-green-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-bold text-purple-900 dark:text-purple-200">Solana Wallet Connected</span>
-            </div>
-            <div className="text-xs font-mono text-black dark:text-white break-all">
-              {publicKey.toBase58()}
-            </div>
-            <div className="mt-2 text-[10px] text-purple-700 dark:text-purple-300">
-              Use this wallet for private payments
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6">
-        {/* Wallet Overview Card */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-widest">Total Portfolio</p>
-                <p className="text-xs text-gray-500 font-mono mt-0.5">
-                  {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : '0x742d...f44e'}
-                </p>
-              </div>
-            </div>
-            <IconWallet className="w-5 h-5 text-neon-green" />
-          </div>
-
-          <div className="mb-4">
-            <h2 className="text-4xl font-bold text-black mb-1">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h2>
-            <p className="text-xs text-gray-500">Total Value (USD)</p>
-          </div>
-
-          {/* Breakdown */}
-          <div className="flex justify-center items-center text-center gap-12 pt-4 border-t border-gray-300">
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <TrendingUp className="w-3 h-3 text-neon-green" />
-                <p className="text-xs text-gray-600">Actual Balance</p>
-              </div>
-              <p className="text-lg font-bold text-neon-green">
-                ${actualBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <TrendingDown className="w-3 h-3 text-red-500" />
-                <p className="text-xs text-gray-600">Borrowed</p>
-              </div>
-              <p className="text-lg font-bold text-red-500">
-                ${borrowedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Send and Receive */}
-        <div className="flex justify-between mb-6">
-          <button
-            onClick={() => setShowSendDialog(true)}
-            className="flex-1 bg-neon-green text-black py-3 mr-2 rounded-2xl hover:bg-neon-green/80 transition-colors flex items-center justify-center gap-2"
-          >
-            <ArrowUpRight className="w-4 h-4" />
-            Send
-          </button>
-          <button
-            onClick={() => setShowReceiveDialog(true)}
-            className="flex-1 bg-solana-purple text-white py-3 ml-2 rounded-2xl hover:bg-solana-purple/80 transition-colors flex items-center justify-center gap-2"
-          >
-            <ArrowDownRight className="w-4 h-4" />
-            Receive
-          </button>
-        </div>
-
-        {/* Assets Section */}
+        {/* Card Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <div className="w-1 h-6 bg-neon-green rounded-full"></div>
-              Assets
-            </h2>
+          <div className="flex justify-between mb-3 items-center">
+            <h2 className="text-xs text-gray-500 uppercase tracking-wide font-bold px-2">Your Card</h2>
+            <button
+              onClick={toggleCardDetails}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neon-green bg-neon-green transition-all active:scale-95"
+            >
+              {showCardDetails ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-black" />
+                  <span className="text-xs font-bold text-black">Hide</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-black" />
+                  <span className="text-xs font-bold text-black">Show</span>
+                </>
+              )}
+            </button>
           </div>
-
-          <div className="space-y-3">
-            {/* SOL */}
-            <div className="bg-white p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Logo" className='w-8 h-8' />
-                  <div>
-                    <p className="font-bold text-lg">{solToken?.symbol || 'SOL'}</p>
-                    <p className="text-xs text-gray-500">{solToken?.name || 'Solana'}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg">{(solToken?.balance || 0).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">
-                    ${solValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* USDC */}
-            <div className="bg-white p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC Logo" className='w-8 h-8' />
-                  <div>
-                    <p className="font-bold text-lg">{usdcToken?.symbol || 'USDC'}</p>
-                    <p className="text-xs text-gray-500">{usdcToken?.name || 'USD Coin'}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg">{(usdcToken?.balance || 0).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">
-                    ${usdcValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PhantomCard showDetails={showCardDetails} />
         </div>
-      </main>
 
-      {/* Send Dialog */}
-      <AnimatePresence>
-        {showSendDialog && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSendDialog(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[85vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold">Send Crypto</h3>
-                <button
-                  onClick={() => setShowSendDialog(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto">
-                <div className="space-y-4">
-                  {/* Token Selection */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Select Token</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setSelectedToken('SOL')}
-                        className={`p-4 rounded-xl border-2 transition-all ${selectedToken === 'SOL'
-                          ? 'border-neon-green bg-neon-green/10'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" className="w-6 h-6" />
-                          <div className="text-left">
-                            <p className="font-bold text-sm">SOL</p>
-                            <p className="text-xs text-gray-500">{(solToken?.balance || 0).toFixed(2)}</p>
-                          </div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => setSelectedToken('USDC')}
-                        className={`p-4 rounded-xl border-2 transition-all ${selectedToken === 'USDC'
-                          ? 'border-neon-green bg-neon-green/10'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="w-6 h-6" />
-                          <div className="text-left">
-                            <p className="font-bold text-sm">USDC</p>
-                            <p className="text-xs text-gray-500">{(usdcToken?.balance || 0).toFixed(2)}</p>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Recipient Address */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Recipient Address</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={sendAddress}
-                        onChange={(e) => setSendAddress(e.target.value)}
-                        placeholder="Enter wallet address or ENS"
-                        className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-neon-green outline-none transition-colors"
-                      />
-                      <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <Scan className="w-4 h-4 text-gray-500" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Amount */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Amount</label>
-                    <div className="bg-linear-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <input
-                          type="number"
-                          value={sendAmount}
-                          onChange={(e) => setSendAmount(e.target.value)}
-                          placeholder="0.00"
-                          className="text-2xl font-bold bg-transparent border-none outline-none w-full"
-                        />
-                        <span className="text-lg font-bold text-gray-500">{selectedToken}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">
-                          Available: {getMaxBalance().toFixed(2)} {selectedToken}
-                        </span>
-                        <button
-                          onClick={() => setSendAmount(getMaxBalance().toString())}
-                          className="font-bold text-neon-green bg-neon-green/10 px-2 py-1 rounded uppercase hover:bg-neon-green/20 transition-colors"
-                        >
-                          Max
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Network Fee */}
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">Network Fee</span>
-                      <span className="font-bold text-black">~0.000005 SOL</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">≈ $0.0007 USD</p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => setShowSendDialog(false)}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSend}
-                      disabled={!sendAddress || !sendAmount || parseFloat(sendAmount) <= 0}
-                      className="flex-1 bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold py-3 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Send {selectedToken}
-                    </button>
-                  </div>
+        {/* Total Balance Card */}
+        <div className="mb-6">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Total Portfolio Value</div>
+            <div className="text-4xl font-bold text-black mb-1">
+              {loading ? (
+                <div className="h-10 w-32 bg-gray-200 animate-pulse rounded"></div>
+              ) : (
+                `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
+            </div>
+            {/* Solana Wallet Connection Status */}
+            {connected && publicKey && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-neon-green" />
+                  <span className="text-xs font-bold text-black">Solana Wallet Connected</span>
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Receive Dialog */}
-      <AnimatePresence>
-        {showReceiveDialog && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowReceiveDialog(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-15 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[85vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold">Receive Crypto</h3>
-                <button
-                  onClick={() => setShowReceiveDialog(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto">
-                <div className="space-y-4">
-                  {/* QR Code */}
-                  <div className="flex flex-col items-center">
-                    <div className="bg-white p-6 rounded-2xl border-4 border-gray-200 shadow-lg mb-4">
-                      <QRCodeSVG
-                        value={walletAddress || '0x742d35a4b9473EdBfBd16b0bDd18e23A4f44e'}
-                        size={200}
-                        level="H"
-                        includeMargin={true}
-                        bgColor="#ffffff"
-                        fgColor="#000000"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600 text-center mb-2">
-                      Scan this QR code to get the wallet address
-                    </p>
-                  </div>
-
-                  {/* Wallet Address */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Your Wallet Address</label>
-                    <div className="flex gap-2 items-center p-2">
-                      <p className="text-sm font-mono text-black break-all text-center">
-                        {walletAddress || '0x742d35a4b9473EdBfBd16b0bDd18e23A4f44e'}
-                      </p>
-                      <button
-                        onClick={handleCopyAddress}
-                        className="w-5 bg-white text-black font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-4 h-4 text-neon-green" />
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Close Button */}
-                  <button
-                    onClick={() => setShowReceiveDialog(false)}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-black font-semibold py-3 rounded-xl transition-colors"
+                <div className="flex items-center gap-2 px-2">
+                  <div
+                    className="text-xs font-mono text-black bg-neutral-200 py-0.5 px-2 rounded-xl overflow-x-auto w-64 hide-scrollbar"
+                    style={{
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none"
+                    }}
                   >
-                    Close
+
+                    {publicKey.toBase58()}
+                  </div>
+                  <button
+                    onClick={handleCopyAddress}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    {copied ? <Check size={16} className="text-neon-green" /> : <Copy size={16} className="text-gray-500" />}
                   </button>
                 </div>
               </div>
-            </motion.div>
-          </>
+            )}
+          </div>
+        </div>
+
+        {/* Toggle Tabs */}
+        <div className="mb-4">
+          <div className="flex gap-2 bg-gray-100 rounded-xl p-1">
+            <button
+              onClick={() => setActiveTab('assets')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'assets'
+                ? 'bg-white text-black shadow-sm'
+                : 'text-gray-500 hover:text-black'
+                }`}
+            >
+              Assets
+            </button>
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'activity'
+                ? 'bg-white text-black shadow-sm'
+                : 'text-gray-500 hover:text-black'
+                }`}
+            >
+              Activity
+            </button>
+          </div>
+        </div>
+
+        {/* Assets View */}
+        {activeTab === 'assets' && (
+          <div className="mb-6">
+            <h2 className="text-xs text-gray-500 uppercase tracking-wide font-bold mb-3 px-2">Your Assets</h2>
+            <div className="space-y-2">
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                          <div>
+                            <div className="h-4 w-16 bg-gray-200 animate-pulse rounded mb-1"></div>
+                            <div className="h-3 w-24 bg-gray-200 animate-pulse rounded"></div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="h-4 w-20 bg-gray-200 animate-pulse rounded mb-1"></div>
+                          <div className="h-3 w-16 bg-gray-200 animate-pulse rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {/* SOL Balance */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-neon-green hover:bg-neon-green/5 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=040" alt="" className='h-8 w-8' />
+                        <div>
+                          <div className="font-bold text-black">SOL</div>
+                          <div className="text-xs text-gray-500">Solana</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-black">{solBalance.toFixed(4)}</div>
+                        <div className="text-xs text-gray-500">${(solBalance * solPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Empty state for other tokens */}
+                  {solBalance > 0 && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                      <div className="text-xs text-gray-500">No other tokens found</div>
+                    </div>
+                  )}
+
+                  {solBalance === 0 && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                      <div className="text-xs text-gray-500">No assets found in this wallet</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+
+        {/* Activity View */}
+        {activeTab === 'activity' && (
+          <div className="mb-6">
+            <h2 className="text-xs text-gray-500 uppercase tracking-wide font-bold mb-3 px-2">Recent Activity</h2>
+            <div className="space-y-2">
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <div className="h-4 w-32 bg-gray-200 animate-pulse rounded mb-2"></div>
+                      <div className="h-3 w-48 bg-gray-200 animate-pulse rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-neon-green hover:bg-neon-green/5 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'receive' ? '' : ''
+                          }`}>
+                          {/* <Activity size={16} className={activity.type === 'receive' ? 'text-green-600' : 'text-gray-600'} /> */}
+                          {activity.type === 'receive' ? (
+                            <IconSend size={24} className="text-slate-400 rotate-180" />
+                          ) :
+                            <IconSend size={24} className="text-green-600" />
+                          }
+                        </div>
+                        <div>
+                          <div className="font-bold text-black text-sm capitalize">{activity.type}</div>
+                          <div className="text-xs text-gray-500">{activity.timestamp}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-bold text-sm ${activity.type === 'receive' ? 'text-green-600' : 'text-black'}`}>
+                          {activity.type === 'receive' ? '+' : '-'}{activity.amount.toFixed(4)} {activity.token}
+                        </div>
+                        <div className="text-xs text-gray-500 font-mono">{activity.signature}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
+                  <div className="text-xs text-gray-500">No recent activity</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Info Card */}
+        <div className="bg-neon-green/10 border border-neon-green/30 rounded-2xl p-5">
+          <div className="text-sm font-bold text-black mb-2">Privacy Payments</div>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Your wallet is ready for private payments. Visit the P-Links section to create payment requests, deposit funds privately, or claim payments using secrets.
+          </p>
+        </div>
+      </main>
     </motion.div>
   );
 }

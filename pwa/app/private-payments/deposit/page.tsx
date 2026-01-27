@@ -7,8 +7,7 @@ import { LAMPORTS_PER_SOL, VersionedTransaction } from "@solana/web3.js";
 import { deposit, getUtxos, getBalanceFromUtxos } from "privacycash/utils";
 import { encryptionServiceFromSecretBytes, getLightWasm } from "@/lib/privacycashClient";
 import { newPaymentLinkSecret, encodeSecretBase58, decodeSecretBase58 } from "@/lib/paymentLink";
-import { ArrowLeft, Download, Key, Copy, Check } from "lucide-react";
-import Link from "next/link";
+import { Download, Key, Copy, Check } from "lucide-react";
 
 export default function DepositPage() {
   const { connection } = useConnection();
@@ -121,10 +120,10 @@ export default function DepositPage() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/private-payments" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
-              <ArrowLeft size={18} />
-              <span className="text-sm">Back</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-neon-green">$</span>
+              <h1 className="text-xl font-bold text-black dark:text-white">P-Links</h1>
+            </div>
             <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
           </div>
         </div>
