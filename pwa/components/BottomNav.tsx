@@ -16,7 +16,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-2 left-0 right-0 bg-white border rounded-4xl border-gray-200 z-50 mx-4">
+    <nav className="fixed bottom-2 left-0 right-0 bg-slate-950 rounded-4xl shadow-xs shadow-zinc-700 z-50 mx-4">
       <div className="max-w-md mx-auto px-2 h-16 flex items-center justify-center">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/wallet' && pathname.startsWith(item.href));
@@ -26,7 +26,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={`flex-1 flex flex-col items-center gap-1 transition-colors duration-200 ${
-                isActive ? 'text-neon-green border-b-2 border-neon-green' : 'text-gray-500 hover:text-black'
+                isActive ? 'text-neon-green border-b-2 border-neon-green' : 'text-gray-200 hover:text-white'
               }`}
             >
               <span className="text-xl">{item.icon}</span>

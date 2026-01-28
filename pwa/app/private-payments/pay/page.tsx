@@ -9,6 +9,7 @@ import { encryptionServiceFromSecretBytes, getLightWasm } from "@/lib/privacycas
 import { newPaymentLinkSecret, encodeSecretBase58 } from "@/lib/paymentLink";
 import { Send, Copy, Check } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 function PayPageContent() {
   const searchParams = useSearchParams();
@@ -81,31 +82,22 @@ function PayPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 font-mono pb-20">
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-neon-green">$</span>
-              <h1 className="text-xl font-bold text-black dark:text-white">P-Links</h1>
-            </div>
-            <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white"
+    >
+      {/* Header */}
+      <div className="flex items-center py-8 px-6 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-neon-green">$</span>
+          <h1 className="text-3xl font-bold text-black dark:text-white">Pay Request</h1>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-md mx-auto px-4 py-6">
-        <div className="bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 rounded-2xl p-6 border border-green-200 dark:border-green-900">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-              <Send size={24} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-black dark:text-white">Pay Request</h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Send private payment</p>
-            </div>
-          </div>
-        </div>
+      <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6 pb-36">
 
         {payload ? (
           <>
@@ -129,13 +121,19 @@ function PayPageContent() {
               />
             </div>
 
-            <button
-              className="mt-6 w-full bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!canPay}
-              onClick={() => onDeposit().catch((e) => setStatus(String(e?.message ?? e)))}
-            >
-              {canPay ? "Make Private Payment" : "Connect Wallet to Continue"}
-            </button>
+            <div className="h-10"></div>
+
+            {/* Fixed Bottom Button */}
+            <div className="flex gap-3 fixed z-10 bottom-20 left-0 right-0 max-w-lg mx-auto px-6">
+              <button
+                className="w-full bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold text-lg py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canPay}
+                onClick={() => onDeposit().catch((e) => setStatus(String(e?.message ?? e)))}
+              >
+                <span>{canPay ? "Make Private Payment" : "Connect Wallet"}</span>
+                <span className="text-xl">→</span>
+              </button>
+            </div>
           </>
         ) : (
           <div className="mt-6 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-900 rounded-2xl p-5">
@@ -208,7 +206,7 @@ function PayPageContent() {
           </ol>
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }
 

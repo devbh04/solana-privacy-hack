@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 import path from "path";
+// @ts-ignore
+import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
@@ -49,4 +51,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+})(nextConfig);

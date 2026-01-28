@@ -21,6 +21,10 @@ export default function Home() {
   const isHydrated = useAppStore((state) => state.isHydrated);
   const [isConnecting, setIsConnecting] = useState(false);
   
+  // PWA Install
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  
   // Feature carousel state - MUST be before any conditional returns
   const [currentFeature, setCurrentFeature] = useState(0);
   const featuresRef = useRef(null);
@@ -98,6 +102,37 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [features.length]);
 
+  // PWA Install prompt handling
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallButton(false);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setShowInstallButton(false);
+    }
+    
+    setDeferredPrompt(null);
+  };
+
   const handleConnectWallet = () => {
     if (connected && publicKey) {
       // Already connected, just navigate
@@ -126,7 +161,7 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-black via-gray-900 to-black text-white antialiased selection:bg-neon-green selection:text-black min-h-screen flex flex-col overflow-hidden">
+    <div className="bg-linear-to-b from-black via-gray-900 to-black text-white antialiased selection:bg-neon-green selection:text-black min-h-screen flex flex-col overflow-hidden">
       <div className="relative flex-1 flex flex-col w-full max-w-md mx-auto py-8">
         {/* Header */}
         <header className="flex px-4 items-center justify-between mb-12 opacity-0 animate-fade-in border-b border-neon-green/20 pb-4" style={{ animationDelay: '0.1s' }}>
@@ -134,9 +169,20 @@ export default function Home() {
             <Lock className="text-neon-green" size={20} />
             <span className="text-neon-green font-bold text-lg tracking-tight">P-Links</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-neon-green animate-pulse"></div>
-            <p className='text-xs text-gray-400'>v1.0.0</p>
+          <div className="flex items-center gap-3">
+            {showInstallButton && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neon-green/50 bg-neon-green/10 hover:bg-neon-green/20 transition-all text-neon-green text-xs font-bold"
+              >
+                <Download size={14} />
+                Install
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-neon-green animate-pulse"></div>
+              <p className='text-xs text-gray-400'>v1.0.0</p>
+            </div>
           </div>
         </header>
 
@@ -154,7 +200,7 @@ export default function Home() {
           </div>
 
           {/* Sliding Feature Cards */}
-          <div ref={featuresRef} className="w-full py-8 opacity-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div ref={featuresRef} className="w-full opacity-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="relative h-48 mb-4">
               {features.map((feature, index) => (
                 <motion.div
@@ -168,7 +214,7 @@ export default function Home() {
                   transition={{ duration: 0.5 }}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  <div className={`w-full bg-gradient-to-br ${feature.color} rounded-2xl p-6 text-left shadow-2xl`}>
+                  <div className={`w-full bg-linear-to-br ${feature.color} rounded-2xl p-6 text-left shadow-2xl`}>
                     <div className="flex items-start gap-4">
                       <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3">
                         {feature.icon}

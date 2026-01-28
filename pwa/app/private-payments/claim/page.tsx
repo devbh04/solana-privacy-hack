@@ -10,6 +10,7 @@ import { decodeSecretBase58 } from "@/lib/paymentLink";
 import { Coins, Lock, Plus, Download } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 function ClaimPageContent() {
   const searchParams = useSearchParams();
@@ -181,34 +182,23 @@ function ClaimPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 font-mono pb-20">
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-neon-green">$</span>
-              <h1 className="text-xl font-bold text-black dark:text-white">P-Links</h1>
-            </div>
-            <WalletMultiButton style={{ fontSize: '11px', padding: '6px 12px', height: 'auto' }} />
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white"
+    >
+      {/* Header */}
+      <div className="flex items-center py-8 px-6 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-neon-green">$</span>
+          <h1 className="text-3xl font-bold text-black dark:text-white">Claim Funds</h1>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-md mx-auto px-4 py-6">
-        {/* Claim Section */}
-        <div className="bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
-              <Coins size={24} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-black dark:text-white">Claim Funds</h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Withdraw from payment link</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-4">
+      <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6 pt-6 pb-36">
+        <div className="space-y-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
             <label className="text-sm font-bold text-black dark:text-white">Payment Link Secret</label>
             <input
@@ -237,16 +227,19 @@ function ClaimPageContent() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="h-10"></div>
+
+        {/* Fixed Bottom Buttons */}
+        <div className="flex gap-3 fixed z-10 bottom-20 left-0 right-0 max-w-lg mx-auto px-6">
           <button
-            className="bg-white dark:bg-gray-900 border-2 border-purple-200 dark:border-purple-900 text-black dark:text-white font-bold px-4 py-3 rounded-xl text-sm hover:border-purple-400 dark:hover:border-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-white dark:bg-gray-900 border-2 border-neon-green/30 text-black dark:text-white font-bold py-4 rounded-xl hover:border-neon-green transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!publicKey || !secretBytes}
             onClick={() => refreshBalance().catch((e) => setStatus(String(e?.message ?? e)))}
           >
             Check Balance
           </button>
           <button
-            className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold px-4 py-3 rounded-xl text-sm shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               !publicKey ||
               !secretBytes ||
@@ -257,7 +250,8 @@ function ClaimPageContent() {
             }
             onClick={() => onWithdrawAll().catch((e) => setStatus(String(e?.message ?? e)))}
           >
-            Withdraw All
+            <span>Withdraw All</span>
+            <span className="text-xl">→</span>
           </button>
         </div>
 
@@ -335,7 +329,7 @@ function ClaimPageContent() {
           </div>
         )}
       </main>
-    </div>
+    </motion.div>
   );
 }
 
