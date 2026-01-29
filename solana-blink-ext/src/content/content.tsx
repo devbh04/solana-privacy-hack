@@ -73,14 +73,32 @@ function sendWalletAction(action: string, data: any = {}): Promise<any> {
 
 // Extract blink info from URL
 function extractBlinkInfo(text: string): { amount: string; linkId: string; fullUrl: string } | null {
-  for (const pattern of BLINK_URL_PATTERNS) {
+  // Also try to find the URL in text that might have been truncated or escaped
+  const patterns = [
+    ...BLINK_URL_PATTERNS,
+    // More permissive patterns for production URL
+    /solana-privacy-hack\.vercel\.app\/private-payments\/pay\?[^\s"<>)]+/i,
+    /localhost:\d+\/private-payments\/pay\?[^\s"<>)]+/i,
+  ]
+
+  for (const pattern of patterns) {
     const match = text.match(pattern)
     if (match) {
-      const url = new URL(match[0])
-      const amount = url.searchParams.get('amount')
-      const linkId = url.searchParams.get('id')
-      if (amount && linkId) {
-        return { amount, linkId, fullUrl: match[0] }
+      try {
+        // Ensure URL has protocol
+        let urlStr = match[0]
+        if (!urlStr.startsWith('http')) {
+          urlStr = 'https://' + urlStr
+        }
+        const url = new URL(urlStr)
+        const amount = url.searchParams.get('amount')
+        const linkId = url.searchParams.get('id')
+        console.log('Privacy Blinks: Found URL', urlStr, 'amount:', amount, 'id:', linkId)
+        if (amount && linkId) {
+          return { amount, linkId, fullUrl: urlStr }
+        }
+      } catch (e) {
+        console.log('Privacy Blinks: Failed to parse URL', match[0], e)
       }
     }
   }
@@ -191,9 +209,9 @@ function createBlinkCard(blinkData: any, amount: string, payUrl: string): HTMLEl
                 <span>${truncateAddress(walletState.address || '')}</span>
               </div>
             </div>
-            <a href="${payUrl}" target="_blank" rel="noopener" class="privacy-btn privacy-btn-pay">
+            <button class="privacy-btn privacy-btn-pay" data-action="pay" data-pay-url="${payUrl}">
               🔒 Pay Privately
-            </a>
+            </button>
           `}
         </div>
         
@@ -220,6 +238,21 @@ function attachEventListeners(container: HTMLElement, payUrl: string) {
   // Disconnect button
   const disconnectBtn = container.querySelector('[data-action="disconnect"]')
   disconnectBtn?.addEventListener('click', () => handleDisconnectWallet(container, payUrl))
+
+  // Pay button - opens popup
+  const payBtn = container.querySelector('[data-action=\"pay\"]') as HTMLElement
+  payBtn?.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const url = payBtn.dataset.payUrl || payUrl
+    const width = 430
+    const height = 932
+    const left = Math.round((window.screen.width - width) / 2)
+    const top = Math.round((window.screen.height - height) / 2)
+    // Force popup with minimal chrome - works better in Brave
+    const features = `popup=yes,width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
+    window.open(url, '_blank', features)
+  })
 }
 
 // Rebuild wallet section
@@ -245,9 +278,9 @@ function rebuildWalletSection(container: HTMLElement, payUrl: string) {
               <span>${truncateAddress(walletState.address || '')}</span>
             </div>
           </div>
-          <a href="${payUrl}" target="_blank" rel="noopener" class="privacy-btn privacy-btn-pay">
+          <button class="privacy-btn privacy-btn-pay" data-action="pay" data-pay-url="${payUrl}">
             🔒 Pay Privately
-          </a>
+          </button>
         `
   }
 
