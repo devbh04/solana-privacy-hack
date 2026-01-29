@@ -60,7 +60,7 @@ export default function CreatePage() {
     const shareData: ShareData = {
       title: `${activeMode === 'plink' ? 'P-Link' : 'Blink'} Payment Request`,
       text: messageText,
-      url: link,
+      // url: link,
     };
 
     // Add image if selected and supported
