@@ -437,7 +437,7 @@ export default function DepositPage() {
 
                     <ul className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           1
                         </div>
                         <div>
@@ -447,7 +447,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           2
                         </div>
                         <div>
@@ -457,7 +457,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           3
                         </div>
                         <div>
@@ -467,7 +467,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           4
                         </div>
                         <div>
@@ -499,7 +499,7 @@ export default function DepositPage() {
 
                     <ul className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           1
                         </div>
                         <div>
@@ -509,7 +509,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           2
                         </div>
                         <div>
@@ -519,7 +519,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           3
                         </div>
                         <div>
@@ -529,7 +529,7 @@ export default function DepositPage() {
                       </li>
                       
                       <li className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-neon-green/20 text-neon-green flex items-center justify-center text-xs font-bold">
                           4
                         </div>
                         <div>
