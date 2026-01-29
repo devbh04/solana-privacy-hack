@@ -271,14 +271,67 @@ export default function CreatePage() {
   const handleShare = async () => {
     if (!link) return;
 
-    const paymentDetails = `💰 Amount: ${requestedAmount} SOL (≈$${(parseFloat(requestedAmount || '0') * 150).toFixed(2)} USD)\n\n${activeMode === 'plink' ? '🔐 Zero-knowledge proof payment - your wallet stays private!' : '⚡ Pay directly from social media with Solana Blinks!'}\n\n🔗 Payment Link:\n${link}\n\n✨ Generate your own private payment links at our website!`;
+    // Get type-specific messaging for blink
+    const getBlinkMessage = () => {
+      switch (cardType) {
+        case 'tip':
+          return {
+            emoji: '💰',
+            title: 'Tip Request',
+            action: 'Leave a tip',
+            description: 'Show your appreciation with a tip!'
+          };
+        case 'donation':
+          return {
+            emoji: '❤️',
+            title: 'Donation Request',
+            action: 'Make a donation',
+            description: 'Support a cause you care about!'
+          };
+        case 'payment':
+          return {
+            emoji: '💳',
+            title: 'Payment Request',
+            action: 'Complete payment',
+            description: 'Quick and easy Solana payment!'
+          };
+        default:
+          return {
+            emoji: '✨',
+            title: cardTitle || 'Payment Request',
+            action: 'Send payment',
+            description: cardDescription || 'Pay with Solana!'
+          };
+      }
+    };
+
+    const blinkInfo = getBlinkMessage();
+
+    let paymentDetails: string;
+    let defaultTitle: string;
+
+    if (activeMode === 'blink') {
+      paymentDetails = `${blinkInfo.emoji} ${blinkInfo.title}\n\n` +
+        `� Amount: ${requestedAmount} SOL (≈$${(parseFloat(requestedAmount || '0') * 150).toFixed(2)} USD)\n\n` +
+        `${blinkInfo.description}\n\n` +
+        `⚡ ${blinkInfo.action} directly from social media with Solana Blinks!\n\n` +
+        `🔗 Payment Link:\n${link}\n\n` +
+        `✨ Create your own at Privacy Cash!`;
+      defaultTitle = `${blinkInfo.emoji} ${blinkInfo.title}`;
+    } else {
+      paymentDetails = `💰 Amount: ${requestedAmount} SOL (≈$${(parseFloat(requestedAmount || '0') * 150).toFixed(2)} USD)\n\n` +
+        `🔐 Zero-knowledge proof payment - your wallet stays private!\n\n` +
+        `🔗 Payment Link:\n${link}\n\n` +
+        `✨ Generate your own private payment links at Privacy Cash!`;
+      defaultTitle = '🔒 Private Payment Request 🔒';
+    }
 
     const messageText = customMessage
       ? `${customMessage}\n\n${paymentDetails}`
-      : `🔒 ${activeMode === 'plink' ? 'Private Payment Request' : 'Payment Request'} 🔒\n\n${paymentDetails}`;
+      : `${defaultTitle}\n\n${paymentDetails}`;
 
     const shareData: ShareData = {
-      title: `${activeMode === 'plink' ? 'P-Link' : 'Blink'} Payment Request`,
+      title: `${activeMode === 'plink' ? 'P-Link' : blinkInfo.title}`,
       text: messageText,
       // url: link,
     };
