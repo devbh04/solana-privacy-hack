@@ -331,7 +331,7 @@ export default function CreatePage() {
                       type="color"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 shrink-0"
                     />
                     <input
                       type="text"
@@ -348,7 +348,7 @@ export default function CreatePage() {
                       type="color"
                       value={secondaryColor}
                       onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 shrink-0"
                     />
                     <input
                       type="text"
@@ -365,7 +365,7 @@ export default function CreatePage() {
                       type="color"
                       value={textColor}
                       onChange={(e) => setTextColor(e.target.value)}
-                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 shrink-0"
                     />
                     <input
                       type="text"
@@ -477,7 +477,7 @@ export default function CreatePage() {
               <div className="p-6 overflow-y-auto">
                 <div className="space-y-4">
                   {/* Amount Summary - Phantom Card Theme */}
-                  <div className="relative rounded-xl bg-gradient-to-br from-gray-900 to-black dark:from-black dark:to-gray-950 border border-solana-purple/60 p-6 overflow-hidden shadow-lg shadow-solana-purple/20">
+                  <div className="relative rounded-xl bg-linear-to-br from-gray-900 to-black dark:from-black dark:to-gray-950 border border-solana-purple/60 p-6 overflow-hidden shadow-lg shadow-solana-purple/20">
                     {/* Solana Logo Background */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-10">
                       <NextImage 
