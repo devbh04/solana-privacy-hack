@@ -11,6 +11,7 @@ import { Send, Copy, Check } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BlinkCard from "@/components/BlinkCard";
+import Image from "next/image";
 
 function PayPageContent() {
   const searchParams = useSearchParams();
@@ -37,7 +38,7 @@ function PayPageContent() {
   useEffect(() => {
     async function fetchBlinkCard() {
       if (!linkId) return;
-      
+
       setLoadingCard(true);
       try {
         const response = await fetch(`/api/blink/${linkId}`);
@@ -117,11 +118,12 @@ function PayPageContent() {
       className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white"
     >
       {/* Header */}
-      <div className="flex items-center py-8 px-6 pb-4">
+      <div className="flex items-center justify-between py-8 px-6 pb-4">
         <div className="flex items-center gap-2">
           <span className="text-neon-green">$</span>
           <h1 className="text-3xl font-bold text-black dark:text-white">Pay Request</h1>
         </div>
+        <WalletMultiButton style={{ backgroundColor: '#7C3AED', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', fontWeight: 500, height: 'auto', minWidth: 0 }} />
       </div>
 
       <main className="flex-1 w-full max-w-lg mx-auto flex flex-col px-6 pb-36">
@@ -153,13 +155,33 @@ function PayPageContent() {
               </div>
             )}
 
-            {/* Show default payment request if no Blink card */}
+            {/* Show Phantom-style requesting card if no Blink card */}
             {!blinkCardData && !loadingCard && (
-              <div className="mt-6 bg-purple-50 dark:bg-purple-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-2xl p-5">
-                <div className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2">Payment Request</div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-bold text-black dark:text-white">{payload.requestedAmount} SOL</span>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">ID: {payload.linkId.slice(0, 8)}...</span>
+              <div className="mt-6 relative rounded-xl bg-linear-to-br from-gray-900 to-black dark:from-black dark:to-gray-950 border border-solana-purple/60 p-6 overflow-hidden shadow-lg shadow-solana-purple/20">
+                {/* Solana Logo Background */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                  <Image
+                    src="/solana-sol-logo.svg"
+                    alt="Solana Logo"
+                    width={150}
+                    height={150}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Background Blur Effects */}
+                <div className="absolute -left-10 top-0 w-40 h-40 bg-solana-purple/40 blur-[60px] rounded-full"></div>
+                <div className="absolute -right-10 bottom-0 w-48 h-48 bg-neon-green/30 blur-[70px] rounded-full"></div>
+
+                {/* Content */}
+                <div className="relative z-10 text-center">
+                  <p className="text-sm text-gray-400 mb-3 font-mono tracking-wide">REQUESTING</p>
+                  <div className="flex items-baseline justify-center gap-3">
+                    <span className="text-5xl font-bold text-white drop-shadow-[0_0_10px_rgba(19,241,149,0.4)] tracking-tight">{payload.requestedAmount}</span>
+                    <span className="text-2xl text-neon-green font-bold tracking-wider drop-shadow-[0_0_8px_rgba(19,241,149,0.5)]">SOL</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3 font-mono">≈ ${(parseFloat(payload.requestedAmount || '0') * 150).toFixed(2)} USD</p>
+                  <p className="text-xs text-gray-600 mt-4 font-mono">ID: {payload.linkId.slice(0, 12)}...</p>
                 </div>
               </div>
             )}

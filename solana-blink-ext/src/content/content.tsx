@@ -387,10 +387,41 @@ async function injectCard(element: Element, blinkInfo: { amount: string; linkId:
     element.parentElement
 
   if (container && !container.querySelector('.privacy-card-container')) {
+    // Hide Twitter's URL preview card/image for this tweet
+    const tweetArticle = element.closest('article')
+    if (tweetArticle) {
+      // Twitter's card preview containers
+      const cardPreviews = tweetArticle.querySelectorAll('[data-testid="card.wrapper"], [data-testid="card.layoutLarge.media"], [data-testid="card.layoutSmall.media"]')
+      cardPreviews.forEach(preview => {
+        (preview as HTMLElement).style.display = 'none'
+      })
+
+      // Also hide any link preview images (the unfurled URL cards)
+      const linkPreviews = tweetArticle.querySelectorAll('a[href*="solana-privacy-hack.vercel.app"] > div, a[href*="privacy.cash"] > div, a[href*="localhost:3000"] > div')
+      linkPreviews.forEach(preview => {
+        const parent = preview.closest('[data-testid="card.wrapper"]') || preview.parentElement
+        if (parent) {
+          (parent as HTMLElement).style.display = 'none'
+        }
+      })
+
+      // Hide generic image cards that link to our domain
+      const imageCards = tweetArticle.querySelectorAll('div[style*="background-image"]')
+      imageCards.forEach(card => {
+        const parentLink = card.closest('a')
+        if (parentLink && (parentLink.href.includes('solana-privacy-hack.vercel.app') || parentLink.href.includes('privacy.cash') || parentLink.href.includes('localhost:3000'))) {
+          const wrapper = card.closest('[data-testid="card.wrapper"]') || card.parentElement?.parentElement
+          if (wrapper) {
+            (wrapper as HTMLElement).style.display = 'none'
+          }
+        }
+      })
+    }
+
     const card = createBlinkCard(cardData, blinkInfo.amount, blinkInfo.fullUrl)
     const insertPoint = element.closest('[data-testid="tweetText"]') || element
     insertPoint.parentNode?.insertBefore(card, insertPoint.nextSibling)
-    console.log('Privacy Blinks: Card injected')
+    console.log('Privacy Blinks: Card injected, preview images hidden')
   }
 }
 
