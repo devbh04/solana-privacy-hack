@@ -90,12 +90,24 @@ function extractBlinkInfo(text: string): { amount: string; linkId: string; fullU
         if (!urlStr.startsWith('http')) {
           urlStr = 'https://' + urlStr
         }
+
+        // Remove Twitter's ellipsis truncation (… or %E2%80%A6)
+        urlStr = urlStr.replace(/…$/, '').replace(/%E2%80%A6$/, '')
+
         const url = new URL(urlStr)
-        const amount = url.searchParams.get('amount')
-        const linkId = url.searchParams.get('id')
+        let amount = url.searchParams.get('amount')
+        let linkId = url.searchParams.get('id')
+
+        // Clean linkId - remove ellipsis and any non-alphanumeric trailing chars
+        if (linkId) {
+          linkId = linkId.replace(/[…%E2%80%A6]+$/, '').replace(/[^a-zA-Z0-9]+$/, '')
+        }
+
         console.log('Privacy Blinks: Found URL', urlStr, 'amount:', amount, 'id:', linkId)
         if (amount && linkId) {
-          return { amount, linkId, fullUrl: urlStr }
+          // Reconstruct clean URL
+          const cleanUrl = `${url.origin}${url.pathname}?amount=${amount}&id=${linkId}`
+          return { amount, linkId, fullUrl: cleanUrl }
         }
       } catch (e) {
         console.log('Privacy Blinks: Failed to parse URL', match[0], e)
@@ -107,14 +119,22 @@ function extractBlinkInfo(text: string): { amount: string; linkId: string; fullU
 
 // Fetch blink card data
 async function fetchBlinkData(linkId: string, fullUrl: string) {
+  const apiBase = getApiBaseUrl(fullUrl)
+  const fetchUrl = `${apiBase}/api/blink/${linkId}`
+  console.log('Privacy Blinks: Fetching from', fetchUrl)
+
   try {
-    const apiBase = getApiBaseUrl(fullUrl)
-    const response = await fetch(`${apiBase}/api/blink/${linkId}`)
-    if (!response.ok) throw new Error('Failed to fetch blink')
+    const response = await fetch(fetchUrl)
+    console.log('Privacy Blinks: Response status', response.status)
+    if (!response.ok) {
+      console.log('Privacy Blinks: API returned error, using fallback card')
+      return null
+    }
     const data = await response.json()
+    console.log('Privacy Blinks: Got data', data)
     return data.success ? data.data : null
   } catch (error) {
-    console.error('Privacy Blinks: Error fetching blink data', error)
+    console.error('Privacy Blinks: Fetch error', error)
     return null
   }
 }
