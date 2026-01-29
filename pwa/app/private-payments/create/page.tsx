@@ -4,9 +4,10 @@ import { useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { buildPaymentLinkUrl, generateLinkId } from "@/lib/paymentLink";
-import { Plus, Copy, Check, Lock, X, Info, Share2, Image } from "lucide-react";
+import { Plus, Copy, Check, Lock, X, Info, Share2, Image, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NextImage from "next/image";
+import BlinkCard from "@/components/BlinkCard";
 
 export default function CreatePage() {
   const { publicKey } = useWallet();
@@ -18,6 +19,16 @@ export default function CreatePage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState<string>("");
+  
+  // Blink card customization
+  const [cardTitle, setCardTitle] = useState<string>("Support My Work");
+  const [cardDescription, setCardDescription] = useState<string>("Your contribution helps me create amazing content!");
+  const [cardImageUrl, setCardImageUrl] = useState<string>("");
+  const [cardType, setCardType] = useState<'tip' | 'donation' | 'payment' | 'custom'>('tip');
+  const [primaryColor, setPrimaryColor] = useState<string>("#7C3AED");
+  const [secondaryColor, setSecondaryColor] = useState<string>("#14F195");
+  const [textColor, setTextColor] = useState<string>("#FFFFFF");
+  const [savingCard, setSavingCard] = useState(false);
 
   const link = useMemo(() => {
     if (!linkId) return null;
@@ -45,6 +56,39 @@ export default function CreatePage() {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const saveBlinkCard = async (generatedLinkId: string) => {
+    if (activeMode !== 'blink') return;
+    
+    setSavingCard(true);
+    try {
+      const response = await fetch('/api/blink/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          linkId: generatedLinkId,
+          requestedAmount,
+          cardTitle,
+          cardDescription,
+          cardImageUrl,
+          cardType,
+          primaryColor,
+          secondaryColor,
+          textColor,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save blink card');
+      }
+    } catch (error) {
+      console.error('Error saving blink card:', error);
+    } finally {
+      setSavingCard(false);
     }
   };
 
@@ -187,15 +231,217 @@ export default function CreatePage() {
           </div>
         )}
 
+        {/* Blink Card Customization */}
+        {activeMode === 'blink' && (
+          <div className="space-y-6 mb-6">
+            {/* Card Preview */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
+                  <Palette size={20} className="text-neon-green" />
+                  Card Preview
+                </h3>
+              </div>
+              <BlinkCard
+                data={{
+                  cardTitle,
+                  cardDescription,
+                  cardImageUrl,
+                  cardType,
+                  primaryColor,
+                  secondaryColor,
+                  textColor,
+                  requestedAmount,
+                }}
+                animate={false}
+              />
+            </div>
+
+            {/* Customization Panel */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-5">
+              <h3 className="text-base font-bold text-black dark:text-white">Customize Your Card</h3>
+
+              {/* Card Type */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Card Type</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['tip', 'donation', 'payment', 'custom'] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setCardType(type)}
+                      className={`py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                        cardType === type
+                          ? 'bg-neon-green text-black shadow-sm'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {type === 'tip' && '💰'} {type === 'donation' && '❤️'} {type === 'payment' && '💳'} {type === 'custom' && '✨'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Card Title</label>
+                <input
+                  type="text"
+                  value={cardTitle}
+                  onChange={(e) => setCardTitle(e.target.value)}
+                  maxLength={100}
+                  placeholder="e.g., Support My Work"
+                  className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-neon-green transition-colors"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{cardTitle.length}/100</p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Description</label>
+                <textarea
+                  value={cardDescription}
+                  onChange={(e) => setCardDescription(e.target.value)}
+                  maxLength={500}
+                  rows={3}
+                  placeholder="Tell people what this is for..."
+                  className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-neon-green transition-colors resize-none"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{cardDescription.length}/500</p>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Image URL (Optional)</label>
+                <input
+                  type="text"
+                  value={cardImageUrl}
+                  onChange={(e) => setCardImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-neon-green transition-colors"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Add an image to make your card more appealing</p>
+              </div>
+
+              {/* Colors */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Primary</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs font-mono text-black dark:text-white outline-none focus:border-neon-green"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Accent</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs font-mono text-black dark:text-white outline-none focus:border-neon-green"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Text</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs font-mono text-black dark:text-white outline-none focus:border-neon-green"
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Preset Colors */}
+              <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Color Presets</label>
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    onClick={() => {
+                      setPrimaryColor('#7C3AED');
+                      setSecondaryColor('#14F195');
+                      setTextColor('#FFFFFF');
+                    }}
+                    className="h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600"
+                    style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #14F195 100%)' }}
+                    title="Purple & Green"
+                  />
+                  <button
+                    onClick={() => {
+                      setPrimaryColor('#FF6B6B');
+                      setSecondaryColor('#FFD93D');
+                      setTextColor('#FFFFFF');
+                    }}
+                    className="h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600"
+                    style={{ background: 'linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%)' }}
+                    title="Red & Yellow"
+                  />
+                  <button
+                    onClick={() => {
+                      setPrimaryColor('#4FACFE');
+                      setSecondaryColor('#00F2FE');
+                      setTextColor('#FFFFFF');
+                    }}
+                    className="h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600"
+                    style={{ background: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)' }}
+                    title="Blue Gradient"
+                  />
+                  <button
+                    onClick={() => {
+                      setPrimaryColor('#A8E6CF');
+                      setSecondaryColor('#DCEDC1');
+                      setTextColor('#2C3E50');
+                    }}
+                    className="h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600"
+                    style={{ background: 'linear-gradient(135deg, #A8E6CF 0%, #DCEDC1 100%)' }}
+                    title="Mint & Cream"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="h-10"></div>
 
         {/* Generate Button - Fixed at bottom */}
         <div className="flex gap-3 fixed z-10 bottom-20 left-0 right-0 max-w-lg mx-auto px-6">
           <button
-            onClick={() => setLinkId(generateLinkId())}
-            className="w-full bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold text-lg py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+            onClick={() => {
+              const newLinkId = generateLinkId();
+              setLinkId(newLinkId);
+              if (activeMode === 'blink') {
+                saveBlinkCard(newLinkId);
+              }
+            }}
+            disabled={savingCard}
+            className="w-full bg-neon-green hover:bg-green-400 active:bg-green-500 text-black font-bold text-lg py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span>Generate {activeMode === 'plink' ? 'P-Link' : 'Blink'}</span>
+            <span>{savingCard ? 'Saving...' : `Generate ${activeMode === 'plink' ? 'P-Link' : 'Blink'}`}</span>
             <span className="text-xl">→</span>
           </button>
         </div>

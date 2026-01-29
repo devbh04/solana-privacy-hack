@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, Suspense } from "react";
+import { useMemo, useState, Suspense, useEffect } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { LAMPORTS_PER_SOL, VersionedTransaction } from "@solana/web3.js";
@@ -10,6 +10,7 @@ import { newPaymentLinkSecret, encodeSecretBase58 } from "@/lib/paymentLink";
 import { Send, Copy, Check } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import BlinkCard from "@/components/BlinkCard";
 
 function PayPageContent() {
   const searchParams = useSearchParams();
@@ -29,6 +30,32 @@ function PayPageContent() {
   const [tx, setTx] = useState<string | null>(null);
   const [generatedSecret, setGeneratedSecret] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [blinkCardData, setBlinkCardData] = useState<any>(null);
+  const [loadingCard, setLoadingCard] = useState(false);
+
+  // Fetch Blink card if linkId exists
+  useEffect(() => {
+    async function fetchBlinkCard() {
+      if (!linkId) return;
+      
+      setLoadingCard(true);
+      try {
+        const response = await fetch(`/api/blink/${linkId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setBlinkCardData(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching blink card:', error);
+      } finally {
+        setLoadingCard(false);
+      }
+    }
+
+    fetchBlinkCard();
+  }, [linkId]);
 
   const canPay = !!payload && !!publicKey && !!signTransaction;
 
@@ -101,13 +128,41 @@ function PayPageContent() {
 
         {payload ? (
           <>
-            <div className="mt-6 bg-purple-50 dark:bg-purple-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-2xl p-5">
-              <div className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2">Payment Request</div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-black dark:text-white">{payload.requestedAmount} SOL</span>
-                <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">ID: {payload.linkId.slice(0, 8)}...</span>
+            {/* Display Blink Card if available */}
+            {blinkCardData && !loadingCard && (
+              <div className="mt-6 mb-6">
+                <BlinkCard
+                  data={{
+                    cardTitle: blinkCardData.cardTitle,
+                    cardDescription: blinkCardData.cardDescription,
+                    cardImageUrl: blinkCardData.cardImageUrl,
+                    cardType: blinkCardData.cardType,
+                    primaryColor: blinkCardData.primaryColor,
+                    secondaryColor: blinkCardData.secondaryColor,
+                    textColor: blinkCardData.textColor,
+                    requestedAmount: blinkCardData.requestedAmount,
+                  }}
+                  animate={true}
+                />
               </div>
-            </div>
+            )}
+
+            {loadingCard && (
+              <div className="mt-6 mb-6 bg-gray-100 dark:bg-gray-800 rounded-2xl h-96 flex items-center justify-center">
+                <div className="h-8 w-8 border-4 border-neon-green border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+
+            {/* Show default payment request if no Blink card */}
+            {!blinkCardData && !loadingCard && (
+              <div className="mt-6 bg-purple-50 dark:bg-purple-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-2xl p-5">
+                <div className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2">Payment Request</div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-2xl font-bold text-black dark:text-white">{payload.requestedAmount} SOL</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">ID: {payload.linkId.slice(0, 8)}...</span>
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
               <label className="text-sm font-bold text-black dark:text-white">Amount to Pay (SOL)</label>
@@ -119,6 +174,26 @@ function PayPageContent() {
                 onChange={(e) => setAmountSol(e.target.value)}
                 placeholder="0.1"
               />
+              {/* Amount validation warning */}
+              {payload && parseFloat(amountSol) !== parseFloat(payload.requestedAmount) && (
+                <div className="mt-3">
+                  {parseFloat(amountSol) < parseFloat(payload.requestedAmount) ? (
+                    <div className="flex items-start gap-2 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg p-3">
+                      <span className="text-base">⚠️</span>
+                      <span>
+                        You're paying <strong>{amountSol} SOL</strong> which is less than the requested amount of <strong>{payload.requestedAmount} SOL</strong>. The recipient might not accept this payment.
+                      </span>
+                    </div>
+                  ) : parseFloat(amountSol) > parseFloat(payload.requestedAmount) ? (
+                    <div className="flex items-start gap-2 text-xs text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+                      <span className="text-base">ℹ️</span>
+                      <span>
+                        You're paying <strong>{amountSol} SOL</strong> which is more than the requested amount of <strong>{payload.requestedAmount} SOL</strong>. This will be treated as a tip or overpayment.
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             <div className="h-10"></div>

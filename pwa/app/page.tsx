@@ -83,14 +83,14 @@ export default function Home() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isHydrated && isAuthenticated) {
-      router.push('/private-payments/claim');
+      router.push('/private-payments/create');
     }
   }, [isHydrated, isAuthenticated, router]);
 
   // Auto-redirect when wallet connects
   useEffect(() => {
     if (connected && publicKey && isHydrated) {
-      router.push('/private-payments/claim');
+      router.push('/private-payments/create');
     }
   }, [connected, publicKey, isHydrated, router]);
 
@@ -136,7 +136,7 @@ export default function Home() {
   const handleConnectWallet = () => {
     if (connected && publicKey) {
       // Already connected, just navigate
-      router.push('/private-payments/claim');
+      router.push('/private-payments/create');
     } else {
       // Open wallet selection modal
       setVisible(true);
